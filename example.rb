@@ -1,4 +1,7 @@
-#!/usr/local/bin/ruby -w
+#!/usr/local/bin/ruby17 -w
+
+# breakeven for build run vs native is about 5000 for 5 factorial
+max = 1000000
 
 require "inline"
 
@@ -24,21 +27,32 @@ end
 
 t = MyTest.new()
 
-max = 1000000
+arg = ARGV.pop || 0
+arg = arg.to_i
 
-puts "RubyInline #{Inline::VERSION}"
+puts "RubyInline #{Inline::VERSION}" if $DEBUG
 
-if ARGV.length == 0 then
-  type = "Inline"
-  tstart = Time.now
-  (1..max).each { |n| r = t.fastfact(5); if r != 120 then puts "ACK! - #{r}"; end }
-  tend = Time.now
-else
-  type = "Native"
-  tstart = Time.now
-  (1..max).each { |n| r = t.factorial(5); if r != 120 then puts "ACK! - #{r}"; end }
-  tend = Time.now
+MyTest.send(:alias_method, :testmethod, :fastfact)
+
+def validate(n)
+  if n != 120 then puts "ACK! - #{n}"; end
 end
+
+tstart = Time.now
+if arg == 0 then
+  type = "Alias "
+  (1..max).each { |m| n = t.testmethod(5); validate(n); }
+elsif arg == 1 then
+  type = "Inline"
+  (1..max).each { |m| n = t.fastfact(5);   validate(n); }
+elsif arg == 2 then
+  type = "Native"
+  (1..max).each { |m| n = t.factorial(5);  validate(n); }
+else
+  $stderr.puts "ERROR: argument #{arg} not recognized"
+  exit(1)
+end
+tend = Time.now
 
 total = tend - tstart
 avg = total / max

@@ -16,7 +16,7 @@ public :caller_method_name, :assert_dir_secure
 
 module Inline
 
-  VERSION = '1.0.7'
+  VERSION = '1.1.0'
 
   # TODO: extend the signature to pass in self in order to zap aliased methods
   # def inline(args, prelude, src=nil, instance=self)
@@ -109,8 +109,23 @@ module Inline
     require "#{so_name}"
     myclass.class_eval("include #{mod_name}")
     myclass.class_eval("alias_method :old_#{mymethod}, :#{mymethod}")
-    myclass.class_eval("alias_method :#{mymethod}, :_#{mymethod}")
-    
+
+    if RUBY_VERSION >= "1.7.2" then
+      oldmeth = myclass.instance_method(mymethod)
+      old_method_name = "old_#{mymethod}"
+      myclass.instance_methods.each { |methodname|
+	if methodname != old_method_name then
+	  meth = myclass.instance_method(methodname)
+	  if meth == oldmeth then
+	    myclass.class_eval("alias_method :#{methodname}, :_#{mymethod}")
+	  end
+	end
+      }
+    else
+      $stderr.puts "WARNING: ruby versions < 1.7.2 cannot inline aliased methods"
+      myclass.class_eval("alias_method :#{mymethod}, :_#{mymethod}")
+    end    
+
     # Calling
     return method("_#{mymethod}").call(*args)
   end

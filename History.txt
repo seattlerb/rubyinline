@@ -1,4 +1,12 @@
 ###############################################################################
+2002-11-01 1.1.0				   00 major / 02 minor / 00 bug
+
+	+ Aliased methods are now inlined as well. 250x faster.
+	  ONLY on ruby 1.7+. Warns on ruby < 1.7.
+	+ Added a makefile to automate running of all different benchmarks.
+	- Improved example to include an aliased method testcase.
+
+###############################################################################
 2002-09-22 1.0.7				   00 major / 01 minor / 01 bug
 
 	+ Only compiles the generated code if it was different from
