@@ -12,7 +12,7 @@ def assert_dir_secure(path)
 end
 public :assert_dir_secure
 
-INLINE_VERSION = '2.1.1'
+INLINE_VERSION = '2.1.2'
 
 class Module
   private ############################################################
