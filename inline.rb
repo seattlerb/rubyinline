@@ -41,7 +41,7 @@ $TESTING = false unless defined? $TESTING
 # the current namespace.
 
 module Inline
-  VERSION = '3.1.0'
+  VERSION = '3.2.0'
 
   $stderr.puts "RubyInline v #{VERSION}" if $DEBUG
 
@@ -203,6 +203,9 @@ module Inline
 	result.sub!(/[^;\/\"\>]+#{function_name}\s*\(/, prefix)
 	result.sub!(/\A\n/, '') # strip off the \n in front in case we added it
       end
+
+      file, line = caller[1].split(/:/)
+      result = "# line #{line} \"#{file}\"\n" + result
 
       @src << result
       @sig[function_name] = arity

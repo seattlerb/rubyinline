@@ -1,4 +1,4 @@
-#!/usr/bin/ruby -w 
+#!/usr/local/bin/ruby -w 
 
 $TESTING = true
 
@@ -216,6 +216,8 @@ class TestC < Test::Unit::TestCase
     inline do |builder|
       result = builder.generate src, expand_types
     end
+    result.gsub!(/\# line \d+/, '# line N')
+    expected = '# line N "./test_inline.rb"' + "\n" + expected
     assert_equal(expected, result)
   end
 
@@ -425,7 +427,9 @@ puts(s); return rb_str_new2(s)}"
       result = builder.c "int add(int a, int b) { return a + b; }"
     end
 
-    expected = "static VALUE add(VALUE self, VALUE _a, VALUE _b) {\n  int a = FIX2INT(_a);\n  int b = FIX2INT(_b);\n return INT2FIX(a + b); }"
+    expected = "# line N \"./test_inline.rb\"\nstatic VALUE add(VALUE self, VALUE _a, VALUE _b) {\n  int a = FIX2INT(_a);\n  int b = FIX2INT(_b);\n return INT2FIX(a + b); }"
+
+    result.gsub!(/\# line \d+/, '# line N')
 
     assert_equal expected, result
     assert_equal [expected], builder.src
@@ -439,7 +443,8 @@ puts(s); return rb_str_new2(s)}"
       result = builder.c_raw src.dup
     end
 
-    expected = src
+    result.gsub!(/\# line \d+/, '# line N')
+    expected = "# line N \"./test_inline.rb\"\n" + src
 
     assert_equal expected, result
     assert_equal [expected], builder.src

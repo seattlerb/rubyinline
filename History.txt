@@ -1,7 +1,14 @@
+*** 3.2.0 / 2004-11-24
+
++ 3 minor enhancement
+	+ Gemified
+	+ Added #line preprocessor directives to make debugging inside your ruby file practical.
+	+ Smarter require/instantiation to accomodate other languages better.
+
 *** 3.1.0 / 2004-09-24
 
 + 2 minor enhancement
-	Extended API of Inline::C with prefix(code).
+	+ Extended API of Inline::C with prefix(code).
 	+ Documented all public API.
 + 2 bug fixes
 	+ Cleaned a lot of code and tests.
