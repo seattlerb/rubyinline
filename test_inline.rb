@@ -328,7 +328,6 @@ return INT2FIX(42)}"
   int x = FIX2INT(argv[0]);
   int y = FIX2INT(argv[1]);
   int z = FIX2INT(argv[2]);
-  (void)argc; // shut up unused warnings
 blah; return INT2FIX(x+y+z);}"
 
     util_generate(src, expected)
