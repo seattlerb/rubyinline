@@ -1,4 +1,12 @@
 ###############################################################################
+2002-09-22 1.0.7				   00 major / 01 minor / 01 bug
+
+	+ Only compiles the generated code if it was different from
+          the previous version.
+	- Improved security: Checks group and global write on home
+	  directory.
+
+###############################################################################
 2002-09-18 1.0.6				   00 major / 01 minor / 03 bug
 
 	+ Added a prelude argument for header and datatype declarations.

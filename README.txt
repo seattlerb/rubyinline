@@ -5,7 +5,7 @@ Ruby Inline
 DESCRIPTION:
   
 Ruby Inline is my quick attempt to create an analog to Perl's
-Inline::C. It allows you to imbed C external module code in your ruby
+Inline::C. It allows you to embed C external module code in your ruby
 script directly. The code is compiled and run on the fly when
 needed. The ruby version isn't near as feature-full as the perl
 version, but it is neat!
@@ -13,9 +13,11 @@ version, but it is neat!
 FEATURES/PROBLEMS:
   
 + Quick and easy inlining of your C code embedded in your ruby script.
-- Needs a few more brains to avoid some compiles, but it is so cheap (.21 sec on my box) right now that it might not be worth it.
++ Only recompiles if the C code has changed.
++ Pretends to be secure.
++ Only uses standard ruby libraries, nothing extra to download.
++ Simple as it can be. Less than 125 lines long.
 - Currently doesn't munge ruby names that aren't compatible in C (ex: a!())
-- Not secure. source and shared libs written into /tmp as-is. 
 
 SYNOPSYS:
 

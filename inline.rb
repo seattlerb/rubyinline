@@ -1,4 +1,5 @@
 require "rbconfig"
+require "ftools"
 
 def caller_method_name()
   /\`([^\']+)\'/.match(caller(2).first)[1]
@@ -6,7 +7,7 @@ end
 
 def assert_dir_secure(path)
   mode = File.stat(path).mode
-  unless (mode % 01000) == 0700 then # FIX: not platform independent.
+  unless ((mode % 01000) & 0022) == 0 then # WARN: POSIX systems only...
     $stderr.puts "#{path} is insecure (#{sprintf('%o', mode)}), needs 0700 for perms" 
     exit 1
   end
@@ -15,8 +16,10 @@ public :caller_method_name, :assert_dir_secure
 
 module Inline
 
-  VERSION = '1.0.6'
+  VERSION = '1.0.7'
 
+  # TODO: extend the signature to pass in self in order to zap aliased methods
+  # def inline(args, prelude, src=nil, instance=self)
   def inline(args, prelude, src=nil)
 
     if src.nil? then
@@ -25,7 +28,7 @@ module Inline
     end
 
     rootdir = ENV['INLINEDIR'] || ENV['HOME']
-#    assert_dir_secure(rootdir)
+    assert_dir_secure(rootdir)
 
     tmpdir = rootdir + "/.ruby_inline"
     unless File.directory? tmpdir then
@@ -70,19 +73,36 @@ module Inline
 }
 
       src_name = "#{tmpdir}/#{mod_name}.c"
+
+      # move previous version to the side if it exists
+      test_cmp = false
+      old_src_name = src_name + ".old"
+      if test ?f, src_name then
+	test_cmp = true
+	File.rename src_name, old_src_name
+      end
+
       f = File.new(src_name, "w")
       f.puts src
       f.close
 
-      # Compiling TODO: keep old copy of code and compare, compile if needed.
-      cmd = "#{Config::CONFIG['LDSHARED']} #{Config::CONFIG['CFLAGS']} -I #{hdrdir} -o #{so_name} #{src_name}"
-      
-      if /mswin32/ =~ RUBY_PLATFORM then
-	cmd += " -link /INCREMENTAL:no /EXPORT:Init_#{mod_name}"
+      # recompile only if the files are different
+      recompile = true
+      if test_cmp and File::compare(old_src_name, src_name, $DEBUG) then
+	recompile = false
       end
-      
-      $stderr.puts "Building #{so_name} with '#{cmd}'" if $DEBUG
-      `#{cmd}`
+
+      if recompile then
+
+	cmd = "#{Config::CONFIG['LDSHARED']} #{Config::CONFIG['CFLAGS']} -I #{hdrdir} -o #{so_name} #{src_name}"
+	
+	if /mswin32/ =~ RUBY_PLATFORM then
+	  cmd += " -link /INCREMENTAL:no /EXPORT:Init_#{mod_name}"
+	end
+	
+	$stderr.puts "Building #{so_name} with '#{cmd}'" if $DEBUG
+	`#{cmd}`
+      end
     end
 
     # Loading & Replacing w/ new method
