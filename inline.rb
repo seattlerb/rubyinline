@@ -13,6 +13,8 @@ end
 public :assert_dir_secure
 
 INLINE_VERSION = '2.2.0'
+$INLINE_FLAGS = "" unless defined? $INLINE_FLAGS
+$INLINE_LIBS  = "" unless defined? $INLINE_LIBS
 
 class Module
   private ############################################################
@@ -111,20 +113,21 @@ class Module
 
       count = 0
       signature['args'].each do |arg, type|
-	prefix += "#{type} #{arg} = #{ruby2c(type)}(argv[#{count}]);\n"
+	prefix += "  #{type} #{arg} = #{ruby2c(type)}(argv[#{count}]);\n"
 	count += 1
       end
 
       # replace the function signature (hopefully) with new signature (prefix)
-      result.sub!(/[^;\/\"]+#{function_name}\s*\([^\{]+\{/, "\n" + prefix)
+      result.sub!(/[^;\/\"\>]+#{function_name}\s*\([^\{]+\{/, "\n" + prefix)
       result.sub!(/\A\n/, '') # strip off the \n in front in case we added it
       result.gsub!(/return\s+([^\;\}]+)/) do
 	"return #{c2ruby(return_type)}(#{$1})"
       end
     else
-      result.sub!(/[^;\/\"]+#{function_name}\s*\([^\{]+\{/, "\n" + new_signature)
+      result.sub!(/[^;\/\"\>]+#{function_name}\s*\([^\{]+\{/, "\n" + new_signature)
       result.sub!(/\A\n/, '') # strip off the \n in front in case we added it
     end
+
     return result
   end # def inline_c_gen
 
@@ -155,10 +158,16 @@ class Module
 
   VALUE c#{mod_name};
 
+#ifdef __cplusplus
+extern "C" {
+#endif
   void Init_#{mod_name}() {
     c#{mod_name} = rb_define_module("#{mod_name}");
     rb_define_method(c#{mod_name}, "#{mymethod}", #{mymethod}, -1);
   }
+#ifdef __cplusplus
+}
+#endif
 }
 
       src_name = "#{tmpdir}/#{mod_name}.c"
@@ -200,7 +209,7 @@ class Module
 	  exit 1
 	end
 
-	cmd = "#{Config::CONFIG['LDSHARED']} #{Config::CONFIG['CFLAGS']} -I #{hdrdir} -o #{so_name} #{src_name}"
+	cmd = "#{Config::CONFIG['LDSHARED']} #{$INLINE_FLAGS} #{Config::CONFIG['CFLAGS']} -I #{hdrdir} -o #{so_name} #{src_name} #{$INLINE_LIBS}"
 	
 	if /mswin32/ =~ RUBY_PLATFORM then
 	  cmd += " -link /INCREMENTAL:no /EXPORT:Init_#{mod_name}"
