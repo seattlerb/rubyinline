@@ -19,7 +19,7 @@ class TestDir < Test::Unit::TestCase
   end
 
   def teardown
-    `rm -rf #{@dir}`
+    `rm -rf #{@dir}` unless $DEBUG
   end
 
   def util_assert_secure(perms, should_pass)
@@ -58,7 +58,7 @@ class TestInline < Test::Unit::TestCase
   end
 
   def teardown
-    `rm -rf #{@rootdir}`
+    `rm -rf #{@rootdir}` unless $DEBUG
   end
 
   def test_rootdir
@@ -72,7 +72,8 @@ class TestInline < Test::Unit::TestCase
 
 end
 
-class TestInline::TestC < Test::Unit::TestCase
+class TestInline
+class TestC < Test::Unit::TestCase
 
   # quick hack to make tests more readable,
   # does nothing I wouldn't otherwise do...
@@ -447,7 +448,8 @@ puts(s); return rb_str_new2(s)}"
   # TODO def test_build
   # TODO def test_load
 
-end # class TestInline::TestC
+end # class TestC
+end # class TestInline
 
 class TestModule < Test::Unit::TestCase
 
@@ -457,7 +459,7 @@ class TestModule < Test::Unit::TestCase
   end
 
   def teardown
-    `rm -rf #{@rootdir}`
+    `rm -rf #{@rootdir}` unless $DEBUG
   end
 
   def test_inline
