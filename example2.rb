@@ -7,18 +7,20 @@ require "inline"
 
 class MyTest
 
-  inline_c_raw "
+  inline_c "
 // stupid c++ comment
 #include <iostream>
 /* stupid c comment */
 static
 VALUE
-hello(int argc, VALUE *argv, VALUE self) {
-  std::cout << \"hello\" << std::endl;
+hello(int i) {
+  while (i-- > 0) {
+    std::cout << \"hello\" << std::endl;
+  }
 }
 "
 end
 
 t = MyTest.new()
 
-t.hello
+t.hello(3)

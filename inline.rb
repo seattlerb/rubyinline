@@ -12,7 +12,7 @@ def assert_dir_secure(path)
 end
 public :assert_dir_secure
 
-INLINE_VERSION = '2.2.0'
+INLINE_VERSION = '2.3.0'
 $INLINE_FLAGS = "" unless defined? $INLINE_FLAGS
 $INLINE_LIBS  = "" unless defined? $INLINE_LIBS
 
@@ -163,7 +163,7 @@ extern "C" {
 #endif
   void Init_#{mod_name}() {
     c#{mod_name} = rb_define_module("#{mod_name}");
-    rb_define_method(c#{mod_name}, "#{mymethod}", #{mymethod}, -1);
+    rb_define_method(c#{mod_name}, "#{mymethod}", (VALUE(*)(ANYARGS))#{mymethod}, -1);
   }
 #ifdef __cplusplus
 }

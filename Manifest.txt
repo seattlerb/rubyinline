@@ -3,5 +3,6 @@ Makefile
 Manifest.txt
 README.txt
 example.rb
+example2.rb
 inline.rb
 test_inline.rb
