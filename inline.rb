@@ -1,31 +1,38 @@
-#!/usr/local/bin/ruby -w
-
 require "rbconfig"
 
 def caller_method_name()
   /\`([^\']+)\'/.match(caller(2).first)[1]
 end
-public :caller_method_name
+
+def assert_dir_secure(path)
+  mode = File.stat(path).mode
+  unless (mode % 01000) == 0700 then # FIX: not platform independent.
+    $stderr.puts "#{path} is insecure (#{sprintf('%o', mode)}), needs 0700 for perms" 
+    exit 1
+  end
+end
+public :caller_method_name, :assert_dir_secure
 
 module Inline
 
-  VERSION = '1.0.5'
+  VERSION = '1.0.6'
 
-  def inline(args, src)
+  def inline(args, prelude, src=nil)
 
-    tmpdir = ENV['INLINEDIR'] || ENV['HOME'] + "/.ruby_inline"
+    if src.nil? then
+      src = prelude
+      prelude = ""
+    end
 
+    rootdir = ENV['INLINEDIR'] || ENV['HOME']
+#    assert_dir_secure(rootdir)
+
+    tmpdir = rootdir + "/.ruby_inline"
     unless File.directory? tmpdir then
-      $stderr.puts "NOTE: creating #{tmpdir} for RubyInline"
+      $stderr.puts "NOTE: creating #{tmpdir} for RubyInline" if $DEBUG
       Dir.mkdir(tmpdir, 0700)
     end
-
-    mode = File.stat(tmpdir).mode
-    unless (mode % 01000) == 0700 then # FIX: not platform independent.
-      $stderr.printf "mode = %o\n", mode
-      $stderr.puts "#{tmpdir} is insecure, needs 0700 for perms" 
-      exit 1
-    end
+    assert_dir_secure(tmpdir)
 
     myclass = self.class
     mymethod = self.caller_method_name
@@ -45,12 +52,10 @@ module Inline
 	exit 1
       end
 
-      cc = "#{Config::CONFIG['LDSHARED']} #{Config::CONFIG['CFLAGS']} -I #{hdrdir}"
-      src_name = "#{tmpdir}/#{mod_name}.c"
-      $stderr.puts "Building #{so_name} with '#{cc}'"
-
-      s = %Q{
+      # Generating code
+      src = %Q{
 #include "ruby.h"
+#{prelude}
 
   static VALUE t_#{mymethod}(int argc, VALUE *argv, VALUE self) {
     #{src}
@@ -64,13 +69,20 @@ module Inline
   }
 }
 
-      # Generating code
+      src_name = "#{tmpdir}/#{mod_name}.c"
       f = File.new(src_name, "w")
-      f.puts s
+      f.puts src
       f.close
 
-      # Compiling
-      `#{cc} -o #{so_name} #{src_name}`
+      # Compiling TODO: keep old copy of code and compare, compile if needed.
+      cmd = "#{Config::CONFIG['LDSHARED']} #{Config::CONFIG['CFLAGS']} -I #{hdrdir} -o #{so_name} #{src_name}"
+      
+      if /mswin32/ =~ RUBY_PLATFORM then
+	cmd += " -link /INCREMENTAL:no /EXPORT:Init_#{mod_name}"
+      end
+      
+      $stderr.puts "Building #{so_name} with '#{cmd}'" if $DEBUG
+      `#{cmd}`
     end
 
     # Loading & Replacing w/ new method

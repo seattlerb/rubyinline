@@ -48,7 +48,9 @@ Produces:
 
 REQUIREMENTS:
 
-+ Ruby - 1.6.7 has been used, but not formally tested.
++ Ruby - 1.6.7 has been used on FreeBSD 4.6.
++ POSIX compliant system (ie pretty much any UNIX, or Cygwin on MS platforms).
++ A C compiler (the same one that compiled your ruby interpreter).
 
 INSTALL:
 

@@ -1,4 +1,12 @@
 ###############################################################################
+2002-09-18 1.0.6				   00 major / 01 minor / 03 bug
+
+	+ Added a prelude argument for header and datatype declarations.
+	- Only output stuff if invoked verbose (ie 'ruby -v ./example.rb').
+	- Added some compatibility code for windows.
+	- Declared requirement on POSIX system.
+
+###############################################################################
 2002-09-11 1.0.5				   00 major / 00 minor / 02 bug
 
 	- Improved security model for UNIX. Still not sure about
