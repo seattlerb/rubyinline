@@ -91,7 +91,7 @@ class Module
     raise "Bad parser exception: #{sig}"
   end # def parse_signature
 
-  def inline_c_gen(src, convert_all=true)
+  def inline_c_gen(src, expand_types=true)
     result = src.dup
 
     # REFACTOR: this is duplicated from above
@@ -107,7 +107,7 @@ class Module
     new_signature = "static VALUE #{function_name}(int argc, VALUE *argv, VALUE self) {\n"
     prefix = new_signature.dup
 
-    if convert_all then
+    if expand_types then
 
       count = 0
       signature['args'].each do |arg, type|
@@ -142,12 +142,11 @@ class Module
 
     mymethod = parse_signature(src)['name']
     mod_name = "Mod_#{self}_#{mymethod}"
-    extension = Config::CONFIG["DLEXT"]
-    so_name = "#{tmpdir}/#{mod_name}.#{extension}"  # REFACTOR
+    so_name = "#{tmpdir}/#{mod_name}.#{Config::CONFIG["DLEXT"]}"
+    rb_file = File.expand_path(caller[1].split(/:/).first) # [MS]
 
-    caller_file = File.expand_path(caller[1].split(/:/).first) # [MS]
-    unless File.file? so_name and File.mtime(caller_file) < File.mtime(so_name)
-      
+    unless File.file? so_name and File.mtime(rb_file) < File.mtime(so_name)
+
       # Generating code
       src = %Q{
 #include "ruby.h"
@@ -180,6 +179,11 @@ class Module
       recompile = true
       if test_cmp and File::compare(old_src_name, src_name, $DEBUG) then
 	recompile = false
+
+	# Updates the timestamps on all the generated/compiled files.
+	# Prevents us from entering this conditional unless the source
+	# file changes again.
+        File.utime(Time.now, Time.now, src_name, old_src_name, so_name)
       end
 
       if recompile then
@@ -206,6 +210,8 @@ class Module
 	`#{cmd}`
 	raise "error executing #{cmd}: #{$?}" if $? != 0
       end
+    else
+      $stderr.puts "#{so_name} is up to date" if $DEBUG
     end
 
     # Loading new method
