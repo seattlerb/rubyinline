@@ -475,38 +475,4 @@ class TestModule < Test::Unit::TestCase
 
 end
 
-if __FILE__ == $0 then
-  run_all_tests_with(ZenTestRunner)
-end
-
 # Number of errors detected: 4
-
-
-if false then
-
-  class BlahClass
-
-    inline(:C) do |builder|
-      builder.add_link_flags "-L/tmp/"
-      builder.add_compile_flags "-g"
-
-      builder.c "void add(int a, int b) { return a+b; }"
-
-      builder.c %q{
-	void methodA() {
-	  printf("dumb example\n");
-	}
-      } 
-
-      builder.c_raw %q{
-	VALUE methodB(VALUE self) {
-	  methodA(self);
-	  return Qnil;
-	}
-      }
-    end
-  end
-
-  BlahClass.new.methodB
-
-end
