@@ -1,5 +1,8 @@
 RUBY ?= ruby17
 
+test:
+	ruby -w ./test_inline.rb
+
 bench:
 	@echo "Running native"
 	@$(RUBY) ./example.rb 2 2> /dev/null
@@ -11,3 +14,6 @@ bench:
 	@echo "Without builds"
 	@$(RUBY) ./example.rb 0 2> /dev/null
 	@$(RUBY) ./example.rb 1 2> /dev/null
+
+clean:
+	rm -rf *~ ~/.ruby_inline

@@ -13,44 +13,47 @@ version, but it is neat!
 FEATURES/PROBLEMS:
   
 + Quick and easy inlining of your C code embedded in your ruby script.
++ Rudimentary automatic conversion between ruby and C basic types
+  (char, unsigned, unsigned int, char *, int, long, unsigned long).
 + Only recompiles if the C code has changed.
 + Pretends to be secure.
 + Only uses standard ruby libraries, nothing extra to download.
-+ Simple as it can be. Less than 125 lines long.
++ Simple as it can be. Less than 350 lines long... um... sorta simple.
 - Currently doesn't munge ruby names that aren't compatible in C (ex: a!())
 
 SYNOPSYS:
 
   require "inline"
   class MyTest
-    include Inline
-    def fastfact(*args)
-      inline args, <<-END
-      int i, f=1;
-      for (i = FIX2INT(argv[0]); i >= 1; i--) { f = f * i; }
-      return INT2FIX(f);
-      END
-    end
+    inline_c "
+      long factorial(int max) {
+        int i=max, result=1;
+        while (i >= 2) { result *= i--; }
+        return result;
+      }"
   end
   t = MyTest.new()
-  factorial_5 = t.fastfact(5)
+  factorial_5 = t.factorial(5)
 
 Produces:
 
-  <502> rm /tmp/Mod_MyTest_fastfact.*; ./example.rb 
-  RubyInline 1.0.4
-  Building /tmp/Mod_MyTest_fastfact.so with 'cc -shared -O -pipe  -fPIC -I /usr/local/lib/ruby/1.6/i386-freebsd4'
-  Type = Inline, Iter = 1000000, time = 5.37746200 sec, 0.00000538 sec / iter
-  <503> ./example.rb 
-  RubyInline 1.0.4
-  Type = Inline, Iter = 1000000, time = 5.26147500 sec, 0.00000526 sec / iter
-  <504> ./example.rb native
-  RubyInline 1.0.4
-  Type = Native, Iter = 1000000, time = 24.09801500 sec, 0.00002410 sec / iter
+  % rm ~/.ruby_inline/*
+  % ./example.rb 0
+  Type = Inline C , Iter = 1000000, T = 7.12203800 sec, 0.00000712 sec / iter
+  % ./example.rb 0
+  Type = Inline C , Iter = 1000000, T = 7.11633600 sec, 0.00000712 sec / iter
+  % ./example.rb 1
+  WARNING: Inline#inline is deprecated, use Module#inline_c
+  Type = Alias    , Iter = 1000000, T = 7.27398900 sec, 0.00000727 sec / iter
+  % ./example.rb 2
+  WARNING: Inline#inline is deprecated, use Module#inline_c
+  Type = InlineOld, Iter = 1000000, T = 7.10194600 sec, 0.00000710 sec / iter
+  % ./example.rb 3
+  Type = Native   , Iter = 1000000, T = 22.10488600 sec, 0.00002210 sec / iter
 
 REQUIREMENTS:
 
-+ Ruby - 1.6.7 has been used on FreeBSD 4.6.
++ Ruby - 1.6.7 & 1.7.2 has been used on FreeBSD 4.6.
 + POSIX compliant system (ie pretty much any UNIX, or Cygwin on MS platforms).
 + A C compiler (the same one that compiled your ruby interpreter).
 

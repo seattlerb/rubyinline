@@ -1,5 +1,7 @@
 History.txt
+Makefile
 Manifest.txt
 README.txt
 example.rb
 inline.rb
+test_inline.rb
