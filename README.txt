@@ -84,7 +84,7 @@ REQUIREMENTS:
 + Ruby - 1.6.7 & 1.7.2 has been used on FreeBSD 4.6 and MacOSX.
 + POSIX compliant system (ie pretty much any UNIX, or Cygwin on MS platforms).
 + A C/C++ compiler (the same one that compiled your ruby interpreter).
-+ test::unit for running tests (http://testunit.talbott.ws/).
++ test::unit for running tests ( http://testunit.talbott.ws/ ).
 
 INSTALL:
 

@@ -3,6 +3,12 @@ RUBY ?= /usr/local/bin/ruby
 test:
 	$(RUBY) -I. -w ./test_inline.rb
 
+examples:
+	rm -rf ~/.ruby_inline; $(RUBY) -I. -w ./example.rb
+	rm -rf ~/.ruby_inline; $(RUBY) -I. -w ./example2.rb
+	rm -rf ~/.ruby_inline; $(RUBY) -I. -w ./tutorial/example1.rb
+	rm -rf ~/.ruby_inline; $(RUBY) -I. -w ./tutorial/example2.rb
+
 bench:
 	@echo "Running native"
 	@$(RUBY) -I. ./example.rb 3 2> /dev/null

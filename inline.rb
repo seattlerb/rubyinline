@@ -1,276 +1,339 @@
+#!/usr/local/bin/ruby -w
+
 require "rbconfig"
 require "ftools"
 
 $TESTING = false unless defined? $TESTING
 
-def assert_dir_secure(path)
-  mode = File.stat(path).mode
-  unless ((mode % 01000) & 0022) == 0 then # WARN: POSIX systems only...
-    $stderr.puts "#{path} is insecure (#{sprintf('%o', mode)}), needs 0700 for perms" 
-    exit 1
-  end
-end
-public :assert_dir_secure
+module Inline
+  VERSION = '3.0.0'
 
-INLINE_VERSION = '2.4.0'
-$INLINE_FLAGS = "" unless defined? $INLINE_FLAGS
-$INLINE_LIBS  = "" unless defined? $INLINE_LIBS
+  $stderr.puts "RubyInline v #{VERSION}" if $DEBUG
+
+  def self.rootdir
+    unless defined? @@rootdir and test ?d, @@rootdir then
+      rootdir = ENV['INLINEDIR'] || ENV['HOME']
+      Dir.mkdir rootdir, 0700 unless test ?d, rootdir
+      Dir.assert_secure rootdir
+      @@rootdir = rootdir
+    end
+
+    @@rootdir
+  end
+
+  def self.directory
+    unless defined? @@directory and test ?d, @@directory then
+      directory = rootdir + "/.ruby_inline" # TODO Dir.join
+      unless File.directory? directory then
+	$stderr.puts "NOTE: creating #{directory} for RubyInline" if $DEBUG
+	Dir.mkdir directory, 0700
+      end
+      Dir.assert_secure directory
+      @@directory = directory
+    end
+    @@directory
+  end
+
+  class C 
+    ############################################################
+    protected unless $TESTING
+
+    MAGIC_ARITY_THRESHOLD = 2
+    MAGIC_ARITY = -1
+
+    @@type_map = {
+      'char'          => [ 'NUM2CHR',  'CHR2FIX' ],
+      'char *'        => [ 'STR2CSTR', 'rb_str_new2' ],
+      'int'           => [ 'FIX2INT',  'INT2FIX' ],
+      'long'          => [ 'NUM2INT',  'INT2NUM' ],
+      'unsigned int'  => [ 'NUM2UINT', 'UINT2NUM' ],
+      'unsigned long' => [ 'NUM2UINT', 'UINT2NUM' ],
+      'unsigned'      => [ 'NUM2UINT', 'UINT2NUM' ],
+      # Can't do these converters because they conflict with the above:
+      # ID2SYM(x), SYM2ID(x), NUM2DBL(x), FIX2UINT(x)
+    }
+
+    def ruby2c(type)
+      return @@type_map[type].first if @@type_map.has_key? type
+      raise "Unknown type #{type}"
+    end
+
+    def c2ruby(type)
+      return @@type_map[type].last if @@type_map.has_key? type
+      raise "Unknown type #{type}"
+    end
+
+    public if $TESTING ##################################################
+
+    def parse_signature(src, raw=false)
+      sig = src.dup
+
+      # strip c-comments
+      sig.gsub!(/(?:(?:\/\*)(?:(?:(?!\*\/)[\s\S])*)(?:\*\/))/, '')
+      # strip cpp-comments
+      sig.gsub!(/(?:\/\*(?:(?!\*\/)[\s\S])*\*\/|\/\/[^\n]*\n)/, '')
+      # strip preprocessor directives
+      sig.gsub!(/^\s*\#.*(\\\n.*)*/, '')
+      # strip {}s
+      sig.gsub!(/\{[^\}]*\}/, '{ }')
+      # clean and collapse whitespace
+      sig.gsub!(/\s+/, ' ')
+
+      types = 'void|VALUE|' + @@type_map.keys.map{|x| Regexp.escape(x)}.join('|')
+
+      if /(#{types})\s*(\w+)\s*\(([^)]*)\)/ =~ sig then
+	return_type, function_name, arg_string = $1, $2, $3
+	args = []
+	arg_string.split(',').each do |arg|
+
+	  # ACK! see if we can't make this go away (FIX)
+	  # helps normalize into 'char * varname' form
+	  arg = arg.gsub(/\s*\*\s*/, ' * ').strip
+
+	  # if /(#{types})\s+(\w+)\s*$/ =~ arg
+	  if /(((#{types})\s*\*?)+)\s+(\w+)\s*$/ =~ arg then
+	    args.push([$4, $1])
+	    # args.push([$2, $1])
+	  elsif arg != "void" then
+	    $stderr.puts "WARNING: '#{arg}' not understood"
+	  end
+	end
+
+	arity = args.size
+	arity = -1 if arity > MAGIC_ARITY_THRESHOLD or raw
+
+	return {
+	  'return' => return_type,
+	    'name' => function_name,
+	    'args' => args,
+	   'arity' => arity
+	}
+      end
+
+      raise "Bad parser exception: #{sig}"
+    end # def parse_signature
+
+    def generate(src, expand_types=true)
+      result = src.dup
+
+      # REFACTOR: this is duplicated from above
+      # strip c-comments
+      result.gsub!(/(?:(?:\/\*)(?:(?:(?!\*\/)[\s\S])*)(?:\*\/))/, '')
+      # strip cpp-comments
+      result.gsub!(/(?:\/\*(?:(?!\*\/)[\s\S])*\*\/|\/\/[^\n]*\n)/, '')
+
+      signature = parse_signature(src, !expand_types)
+      function_name = signature['name']
+      return_type = signature['return']
+      arity = signature['arity']
+
+      if expand_types then
+	prefix = "static VALUE #{function_name}("
+	if arity == MAGIC_ARITY then
+	  prefix += "int argc, VALUE *argv, VALUE self"
+	else
+	  prefix += "VALUE self"
+	  signature['args'].each do |arg, type|
+	    prefix += ", VALUE _#{arg}"
+	  end
+	end
+	prefix += ") {\n"
+	if arity == MAGIC_ARITY then
+	  count = 0
+	  signature['args'].each do |arg, type|
+	    prefix += "  #{type} #{arg} = #{ruby2c(type)}(argv[#{count}]);\n"
+	    count += 1
+	  end
+	else
+	  signature['args'].each do |arg, type|
+	    prefix += "  #{type} #{arg} = #{ruby2c(type)}(_#{arg});\n"
+	  end
+	end
+	# replace the function signature (hopefully) with new signature (prefix)
+	result.sub!(/[^;\/\"\>]+#{function_name}\s*\([^\{]+\{/, "\n" + prefix)
+	result.sub!(/\A\n/, '') # strip off the \n in front in case we added it
+	unless return_type == "void" then
+	  raise "couldn't find return statement for #{function_name}" unless 
+	    result =~ /return/ 
+	  result.gsub!(/return\s+([^\;\}]+)/) do
+	    "return #{c2ruby(return_type)}(#{$1})"
+	  end
+	else
+	  result.sub!(/\s*\}\s*\Z/, "\nreturn Qnil;\n}")
+	end
+      else
+	prefix = "static #{return_type} #{function_name}("
+	result.sub!(/[^;\/\"\>]+#{function_name}\s*\(/, prefix)
+	result.sub!(/\A\n/, '') # strip off the \n in front in case we added it
+      end
+
+      @src << result
+      @sig[function_name] = arity
+
+      return result # TODO: I only really do this for testing
+    end # def generate
+
+    public ############################################################
+
+    attr_accessor :mod, :src, :sig, :flags, :libs if $TESTING
+
+    def initialize(mod)
+      @mod = mod
+      @src = []
+      @sig = {}
+      @flags = []
+      @libs = []
+    end
+
+    def add_compile_flags(*flags)
+      flags.each do |flag|
+	@flags << flag
+      end
+    end
+
+    def add_link_flags(*flags)
+      flags.each do |flag|
+	@libs << flag
+      end
+    end
+
+    def add_type_converter(type, r2c, c2r)
+      $stderr.puts "WARNING: overridding #{type}" if @@type_map.has_key? type
+      @@type_map[type] = [r2c, c2r]
+    end
+
+    def include(header)
+      @src << "#include #{header}"
+    end
+
+    def c src
+      self.generate(src)
+    end
+    
+    def c_raw src
+      self.generate(src, false)
+    end
+
+    def build
+      mod_name = "Mod_#{@mod}"
+      so_name = "#{Inline.directory}/#{mod_name}.#{Config::CONFIG["DLEXT"]}"
+      rb_file = File.expand_path(caller[1].split(/:/).first) # [MS]
+
+      unless File.file? so_name and File.mtime(rb_file) < File.mtime(so_name)
+	
+	src_name = "#{Inline.directory}/#{mod_name}.c"
+	old_src_name = "#{src_name}.old"
+	should_compare = File.write_with_backup(src_name) do |src|
+	  src << %Q^\n#include "ruby.h"\n\n#{@src.join("\n\n")}\n\n  VALUE c#{mod_name};\n#ifdef __cplusplus\nextern "C" \{\n#endif\n  void Init_#{mod_name}() \{\n    c#{mod_name} = rb_define_module("#{mod_name}");\n^
+	  @sig.keys.sort.each do |name|
+	    arity = @sig[name]
+	    src << %Q{    rb_define_method(c#{mod_name}, "#{name}", (VALUE(*)(ANYARGS))#{name}, #{arity});\n}
+	  end
+	  src << "\n  \}\n#ifdef __cplusplus\n\}\n#endif\n"
+	end
+
+	# recompile only if the files are different
+	recompile = true
+	if should_compare and File::compare(old_src_name, src_name, $DEBUG) then
+	  recompile = false
+
+	  # Updates the timestamps on all the generated/compiled files.
+	  # Prevents us from entering this conditional unless the source
+	  # file changes again.
+	  File.utime(Time.now, Time.now, src_name, old_src_name, so_name)
+	end
+
+	if recompile then
+
+	  # extracted from mkmf.rb
+	  srcdir  = Config::CONFIG["srcdir"]
+	  archdir = Config::CONFIG["archdir"]
+	  if File.exist? archdir + "/ruby.h" then
+	    hdrdir = archdir
+	  elsif File.exist? srcdir + "/ruby.h" then
+	    hdrdir = srcdir
+	  else
+	    $stderr.puts "ERROR: Can't find header files for ruby. Exiting..."
+	    exit 1
+	  end
+
+	  flags = @flags.join(' ')
+	  flags += " #{$INLINE_FLAGS}" if defined? $INLINE_FLAGS# DEPRECATE
+	  libs  = @libs.join(' ')
+	  libs += " #{$INLINE_LIBS}" if defined? $INLINE_LIBS	# DEPRECATE
+
+	  cmd = "#{Config::CONFIG['LDSHARED']} #{flags} #{Config::CONFIG['CFLAGS']} -I #{hdrdir} -o #{so_name} #{src_name} #{libs}"
+	  
+	  if /mswin32/ =~ RUBY_PLATFORM then
+	    cmd += " -link /INCREMENTAL:no /EXPORT:Init_#{mod_name}"
+	  end
+	  
+	  $stderr.puts "Building #{so_name} with '#{cmd}'" if $DEBUG
+	  `#{cmd}`
+	  raise "error executing #{cmd}: #{$?}" if $? != 0
+	  $stderr.puts "Built successfully" if $DEBUG
+	end
+
+      else
+	$stderr.puts "#{so_name} is up to date" if $DEBUG
+      end # unless 
+    end # def build
+      
+    def load
+      # REFACTOR: mod_name and so_name should be instvars
+      mod_name = "Mod_#{@mod}"
+      so_name = "#{Inline.directory}/#{mod_name}.#{Config::CONFIG["DLEXT"]}"
+      require "#{so_name}" or raise "require on #{so_name} failed"
+      @mod.class_eval "include #{mod_name}"
+    end
+  end # class Inline::C
+end # module Inline
 
 class Module
-  private ############################################################
+  public
+  def inline(lang = :C, testing=false)
+    require "inline/#{lang}" unless lang == :C
+    builder = Inline.const_get(lang).new self
 
-  # FIX: this has been modified to be 1.6 specific... 
-  # 1.7 has better options for longs
+    yield builder
 
-  @@type_map = {
-    'char'         => [ 'NUM2CHR',  'CHR2FIX' ],
-    'unsigned'     => [ 'NUM2UINT', 'UINT2NUM' ],
-    'unsigned int' => [ 'NUM2UINT', 'UINT2NUM' ],
-    'char *'       => [ 'STR2CSTR', 'rb_str_new2' ],
+    unless testing then
+      builder.build
+      builder.load
+    end
+  end
+end
+
+class File
+  def self.write_with_backup(path) # returns true if file already existed
     
-    'int'  => [ 'FIX2INT', 'INT2FIX' ],
-    
-    'long' => [ 'NUM2INT', 'INT2NUM' ],
+    # if yield throws an exception, we skip the rename & writes
+    data = []; yield(data); text = data.join('')
 
-    'unsigned long' => [ 'NUM2UINT', 'UINT2NUM' ],
-
-    # Can't do these converters:
-    # ID2SYM(x), SYM2ID(x), NUM2DBL(x), FIX2UINT(x)
-  }
-
-  def ruby2c(type)
-    if @@type_map.has_key?(type) then
-      return @@type_map[type].first
-    else
-      raise "Unknown type #{type}"
+    # move previous version to the side if it exists
+    renamed = false
+    if test ?f, path then
+      renamed = true
+      File.rename path, path + ".old"
     end
+    f = File.new(path, "w")
+    f.puts text
+    f.close
+
+    return renamed
   end
+end
 
-  def c2ruby(type)
-    if @@type_map.has_key?(type) then
-      return @@type_map[type].last
-    else
-      raise "Unknown type #{type}"
-    end
-  end
-
-  public if $TESTING ##################################################
-
-  def parse_signature(src)
-
-    sig = src.dup
-
-    # strip c-comments
-    sig.gsub!(/(?:(?:\/\*)(?:(?:(?!\*\/)[\s\S])*)(?:\*\/))/, '')
-    # strip cpp-comments
-    sig.gsub!(/(?:\/\*(?:(?!\*\/)[\s\S])*\*\/|\/\/[^\n]*\n)/, '')
-    # strip preprocessor directives
-    sig.gsub!(/^\s*\#.*(\\\n.*)*/, '')
-    # strip {}s
-    sig.gsub!(/\{[^\}]*\}/, '{ }')
-    # clean and collapse whitespace
-    sig.gsub!(/\s+/, ' ')
-
-    types = 'void|VALUE|' + @@type_map.keys.map{|x| Regexp.escape(x)}.join('|')
-
-    if /(#{types})\s*(\w+)\s*\(([^)]*)\)/ =~ sig
-      return_type, function_name, arg_string = $1, $2, $3
-      args = []
-      arg_string.split(',').each do |arg|
-
-	# ACK! see if we can't make this go away (FIX)
-	# helps normalize into 'char * varname' form
-	arg = arg.gsub(/\*/, ' * ').gsub(/\s+/, ' ').strip
-
-	if /((#{types}\s*)+)\s+(\w+)\s*$/ =~ arg
-	  args.push([$3, $1])
-	elsif arg == "void" then
-	  # nothing
-	else
-	  $stderr.puts "WARNING: '#{arg}' not understood"
-	end
-      end
-      return {'return' => return_type,
-	  'name' => function_name,
-	  'args' => args }
-    end
-    raise "Bad parser exception: #{sig}"
-  end # def parse_signature
-
-  def inline_c_gen(src, expand_types=true)
-    result = src.dup
-
-    # REFACTOR: this is duplicated from above
-    # strip c-comments
-    result.gsub!(/(?:(?:\/\*)(?:(?:(?!\*\/)[\s\S])*)(?:\*\/))/, '')
-    # strip cpp-comments
-    result.gsub!(/(?:\/\*(?:(?!\*\/)[\s\S])*\*\/|\/\/[^\n]*\n)/, '')
-
-    signature = parse_signature(src)
-    function_name = signature['name']
-    return_type = signature['return']
-    arity = signature['args'].size
-
-    if expand_types then
-
-      prefix = "static VALUE #{function_name}("
-      if arity > 2 then
-	prefix += "int argc, VALUE *argv, VALUE self"
+class Dir
+  def self.assert_secure(path)
+    mode = File.stat(path).mode
+    unless ((mode % 01000) & 0022) == 0 then # WARN: POSIX systems only...
+      if $TESTING then
+	raise 'InsecureDir'
       else
-	prefix += "VALUE self"
-	signature['args'].each do |arg, type|
-	  prefix += ", VALUE _#{arg}"
-	end
+	$stderr.puts "#{path} is insecure (#{sprintf('%o', mode)}), needs 0700 for perms"
+	exit 1
       end
-      prefix += ") {\n"
-
-      if arity > 2 then
-	count = 0
-	signature['args'].each do |arg, type|
-	  prefix += "  #{type} #{arg} = #{ruby2c(type)}(argv[#{count}]);\n"
-	  count += 1
-	end
-      else
-	signature['args'].each do |arg, type|
-	  prefix += "  #{type} #{arg} = #{ruby2c(type)}(_#{arg});\n"
-	end
-      end
-
-      # replace the function signature (hopefully) with new signature (prefix)
-      result.sub!(/[^;\/\"\>]+#{function_name}\s*\([^\{]+\{/, "\n" + prefix)
-      result.sub!(/\A\n/, '') # strip off the \n in front in case we added it
-
-      unless return_type == "void" then
-	result.gsub!(/return\s+([^\;\}]+)/) do
-	  "return #{c2ruby(return_type)}(#{$1})"
-	end
-      else
-	result.sub!(/\s*\}\s*\Z/, "\nreturn Qnil;\n}")
-      end
-    else
-      prefix = "static #{return_type} #{function_name}("
-      result.sub!(/[^;\/\"\>]+#{function_name}\s*\(/, prefix)
-      result.sub!(/\A\n/, '') # strip off the \n in front in case we added it
     end
-
-    return result
-  end # def inline_c_gen
-
-  def inline_c_real(src, expand_types=false)
-    rootdir = ENV['INLINEDIR'] || ENV['HOME']
-
-    # ensure that this is a semi-secure environment...
-    assert_dir_secure(rootdir)
-    tmpdir = rootdir + "/.ruby_inline"
-    unless File.directory? tmpdir then
-      $stderr.puts "NOTE: creating #{tmpdir} for RubyInline" if $DEBUG
-      Dir.mkdir(tmpdir, 0700)
-    end
-    assert_dir_secure(tmpdir)
-
-    signature = parse_signature(src)
-    mymethod = signature['name']
-    arity = signature['args'].size
-    mod_name = "Mod_#{self}_#{mymethod}"
-    so_name = "#{tmpdir}/#{mod_name}.#{Config::CONFIG["DLEXT"]}"
-    rb_file = File.expand_path(caller[1].split(/:/).first) # [MS]
-
-    arity = -1 if arity > 2
-
-    unless File.file? so_name and File.mtime(rb_file) < File.mtime(so_name)
-
-      # Generating code
-      src = %Q{
-#include "ruby.h"
-
-  #{inline_c_gen(src, expand_types)}
-
-  VALUE c#{mod_name};
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-  void Init_#{mod_name}() {
-    c#{mod_name} = rb_define_module("#{mod_name}");
-    rb_define_method(c#{mod_name}, "#{mymethod}", (VALUE(*)(ANYARGS))#{mymethod}, #{arity});
-  }
-#ifdef __cplusplus
-}
-#endif
-}
-
-      src_name = "#{tmpdir}/#{mod_name}.c"
-
-      # move previous version to the side if it exists
-      test_cmp = false
-      old_src_name = src_name + ".old"
-      if test ?f, src_name then
-	test_cmp = true
-	File.rename src_name, old_src_name
-      end
-
-      f = File.new(src_name, "w")
-      f.puts src
-      f.close
-
-      # recompile only if the files are different
-      recompile = true
-      if test_cmp and File::compare(old_src_name, src_name, $DEBUG) then
-	recompile = false
-
-	# Updates the timestamps on all the generated/compiled files.
-	# Prevents us from entering this conditional unless the source
-	# file changes again.
-        File.utime(Time.now, Time.now, src_name, old_src_name, so_name)
-      end
-
-      if recompile then
-
-	# extracted from mkmf.rb
-	srcdir  = Config::CONFIG["srcdir"]
-	archdir = Config::CONFIG["archdir"]
-	if File.exist? archdir + "/ruby.h"
-	  hdrdir = archdir
-	elsif File.exist? srcdir + "/ruby.h"
-	  hdrdir = srcdir
-	else
-	  $stderr.puts "ERROR: Can't find header files for ruby. Exiting..."
-	  exit 1
-	end
-
-	cmd = "#{Config::CONFIG['LDSHARED']} #{$INLINE_FLAGS} #{Config::CONFIG['CFLAGS']} -I #{hdrdir} -o #{so_name} #{src_name} #{$INLINE_LIBS}"
-	
-	if /mswin32/ =~ RUBY_PLATFORM then
-	  cmd += " -link /INCREMENTAL:no /EXPORT:Init_#{mod_name}"
-	end
-	
-	$stderr.puts "Building #{so_name} with '#{cmd}'" if $DEBUG
-	`#{cmd}`
-	raise "error executing #{cmd}: #{$?}" if $? != 0
-      end
-    else
-      $stderr.puts "#{so_name} is up to date" if $DEBUG
-    end
-
-    # Loading new method
-    require "#{so_name}" or raise "require on #{so_name} failed"
-    class_eval("include #{mod_name}")
-
-  end # inline_c_real
-
-  public ############################################################
-
-  def add_inline_type_converter(type, r2c, c2r)
-    $stderr.puts "WARNING: overridding #{type}" if @@type_map.has_key? type
-    @@type_map[type] = [r2c, c2r]
   end
-
-  def inline_c_raw(src)
-    inline_c_real(src, false)
-  end
-
-  def inline_c(src)
-    inline_c_real(src, true)
-  end
-
-end # Module
+end

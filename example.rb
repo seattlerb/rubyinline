@@ -1,4 +1,4 @@
-#!/usr/local/bin/ruby17 -w
+#!/usr/local/bin/ruby -w
 
 require "inline"
 
@@ -10,22 +10,25 @@ class MyTest
     f
   end
 
-  inline_c "
+  inline do |builder|
+    builder.include "<math.h>"
+
+    builder.c "
     long factorial_c(int max) {
       int i=max, result=1;
       while (i >= 2) { result *= i--; }
       return result;
     }"
 
-  inline_c_raw "
-    #include <math.h>
+    builder.c_raw "
     static
     VALUE
     factorial_c_raw(int argc, VALUE *argv, VALUE self) {
-      int i, f=1;
-      for (i = FIX2INT(argv[0]); i >= 1; i--) { f = f * i; }
-      return INT2NUM(f);
+      int i=FIX2INT(argv[0]), result=1;
+      while (i >= 2) { result *= i--; }
+      return INT2NUM(result);
     }"
+  end
 end
 
 t = MyTest.new()
@@ -39,7 +42,7 @@ arg = arg.to_i
 max = ARGV.shift || 1000000
 max = max.to_i
 
-puts "RubyInline #{INLINE_VERSION}" if $DEBUG
+puts "RubyInline #{Inline::VERSION}" if $DEBUG
 
 MyTest.send(:alias_method, :factorial_alias, :factorial_c_raw)
 

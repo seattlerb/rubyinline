@@ -4,20 +4,22 @@ require 'inline'
 
 class Array
 
-  inline_c_raw "
-    static VALUE average(int argc, VALUE *argv, VALUE self) {
-      double result;
-      long  i, len;
-      VALUE *arr = RARRAY(self)->ptr;
-      len = RARRAY(self)->len;
-      
-      for(i=0; i<len; i++) {
-        result += NUM2DBL(arr[i]);
+  inline do |builder|
+    builder.c_raw "
+      static VALUE average(int argc, VALUE *argv, VALUE self) {
+        double result;
+        long  i, len;
+        VALUE *arr = RARRAY(self)->ptr;
+        len = RARRAY(self)->len;
+        
+        for(i=0; i<len; i++) {
+          result += NUM2DBL(arr[i]);
+        }
+  
+        return rb_float_new(result/(double)len);
       }
-
-      return rb_float_new(result/(double)len);
-    }
-"
+    "
+  end
 end
 
 max_loop = (ARGV.shift || 5).to_i
