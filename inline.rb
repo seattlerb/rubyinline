@@ -12,7 +12,7 @@ def assert_dir_secure(path)
 end
 public :assert_dir_secure
 
-INLINE_VERSION = '2.3.0'
+INLINE_VERSION = '2.4.0'
 $INLINE_FLAGS = "" unless defined? $INLINE_FLAGS
 $INLINE_LIBS  = "" unless defined? $INLINE_LIBS
 
@@ -82,8 +82,12 @@ class Module
 	# helps normalize into 'char * varname' form
 	arg = arg.gsub(/\*/, ' * ').gsub(/\s+/, ' ').strip
 
-	if /(#{types})\s+(\w+)\s*$/ =~ arg
-	  args.push([$2, $1])
+	if /((#{types}\s*)+)\s+(\w+)\s*$/ =~ arg
+	  args.push([$3, $1])
+	elsif arg == "void" then
+	  # nothing
+	else
+	  $stderr.puts "WARNING: '#{arg}' not understood"
 	end
       end
       return {'return' => return_type,
@@ -105,26 +109,47 @@ class Module
     signature = parse_signature(src)
     function_name = signature['name']
     return_type = signature['return']
-
-    new_signature = "static VALUE #{function_name}(int argc, VALUE *argv, VALUE self) {\n"
-    prefix = new_signature.dup
+    arity = signature['args'].size
 
     if expand_types then
 
-      count = 0
-      signature['args'].each do |arg, type|
-	prefix += "  #{type} #{arg} = #{ruby2c(type)}(argv[#{count}]);\n"
-	count += 1
+      prefix = "static VALUE #{function_name}("
+      if arity > 2 then
+	prefix += "int argc, VALUE *argv, VALUE self"
+      else
+	prefix += "VALUE self"
+	signature['args'].each do |arg, type|
+	  prefix += ", VALUE _#{arg}"
+	end
+      end
+      prefix += ") {\n"
+
+      if arity > 2 then
+	count = 0
+	signature['args'].each do |arg, type|
+	  prefix += "  #{type} #{arg} = #{ruby2c(type)}(argv[#{count}]);\n"
+	  count += 1
+	end
+      else
+	signature['args'].each do |arg, type|
+	  prefix += "  #{type} #{arg} = #{ruby2c(type)}(_#{arg});\n"
+	end
       end
 
       # replace the function signature (hopefully) with new signature (prefix)
       result.sub!(/[^;\/\"\>]+#{function_name}\s*\([^\{]+\{/, "\n" + prefix)
       result.sub!(/\A\n/, '') # strip off the \n in front in case we added it
-      result.gsub!(/return\s+([^\;\}]+)/) do
-	"return #{c2ruby(return_type)}(#{$1})"
+
+      unless return_type == "void" then
+	result.gsub!(/return\s+([^\;\}]+)/) do
+	  "return #{c2ruby(return_type)}(#{$1})"
+	end
+      else
+	result.sub!(/\s*\}\s*\Z/, "\nreturn Qnil;\n}")
       end
     else
-      result.sub!(/[^;\/\"\>]+#{function_name}\s*\([^\{]+\{/, "\n" + new_signature)
+      prefix = "static #{return_type} #{function_name}("
+      result.sub!(/[^;\/\"\>]+#{function_name}\s*\(/, prefix)
       result.sub!(/\A\n/, '') # strip off the \n in front in case we added it
     end
 
@@ -143,10 +168,14 @@ class Module
     end
     assert_dir_secure(tmpdir)
 
-    mymethod = parse_signature(src)['name']
+    signature = parse_signature(src)
+    mymethod = signature['name']
+    arity = signature['args'].size
     mod_name = "Mod_#{self}_#{mymethod}"
     so_name = "#{tmpdir}/#{mod_name}.#{Config::CONFIG["DLEXT"]}"
     rb_file = File.expand_path(caller[1].split(/:/).first) # [MS]
+
+    arity = -1 if arity > 2
 
     unless File.file? so_name and File.mtime(rb_file) < File.mtime(so_name)
 
@@ -163,7 +192,7 @@ extern "C" {
 #endif
   void Init_#{mod_name}() {
     c#{mod_name} = rb_define_module("#{mod_name}");
-    rb_define_method(c#{mod_name}, "#{mymethod}", (VALUE(*)(ANYARGS))#{mymethod}, -1);
+    rb_define_method(c#{mod_name}, "#{mymethod}", (VALUE(*)(ANYARGS))#{mymethod}, #{arity});
   }
 #ifdef __cplusplus
 }
@@ -231,12 +260,17 @@ extern "C" {
 
   public ############################################################
 
+  def add_inline_type_converter(type, r2c, c2r)
+    $stderr.puts "WARNING: overridding #{type}" if @@type_map.has_key? type
+    @@type_map[type] = [r2c, c2r]
+  end
+
   def inline_c_raw(src)
     inline_c_real(src, false)
   end
 
   def inline_c(src)
     inline_c_real(src, true)
-  end # def inline_c
+  end
 
 end # Module
