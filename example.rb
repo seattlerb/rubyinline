@@ -1,15 +1,12 @@
 #!/usr/local/bin/ruby17 -w
 
-# breakeven for build run vs native is about 5000 for 5 factorial
-max = 1000000
-
 require "inline"
 
 class MyTest
 
   def factorial(n)
     f = 1
-    n.downto(1) { |x| f = f * x }
+    n.downto(2) { |x| f *= x }
     f
   end
 
@@ -33,8 +30,14 @@ end
 
 t = MyTest.new()
 
-arg = ARGV.pop || 0
+arg = ARGV.shift || 0
 arg = arg.to_i
+
+# breakeven for build run vs native doing 5 factorial:
+#   on a PIII/750 running FreeBSD:        about 5000
+#   on a PPC/G4/800 running Mac OSX 10.2: always faster
+max = ARGV.shift || 1000000
+max = max.to_i
 
 puts "RubyInline #{INLINE_VERSION}" if $DEBUG
 

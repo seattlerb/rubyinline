@@ -12,7 +12,7 @@ def assert_dir_secure(path)
 end
 public :assert_dir_secure
 
-INLINE_VERSION = '2.1.0'
+INLINE_VERSION = '2.1.1'
 
 class Module
   private ############################################################
@@ -145,8 +145,8 @@ class Module
     extension = Config::CONFIG["DLEXT"]
     so_name = "#{tmpdir}/#{mod_name}.#{extension}"  # REFACTOR
 
-    f = File.expand_path(caller.first.split(/:/).first)	# [MS]
-    unless File.file? so_name and File.mtime(f) < File.mtime(so_name) then
+    caller_file = File.expand_path(caller[1].split(/:/).first) # [MS]
+    unless File.file? so_name and File.mtime(caller_file) < File.mtime(so_name)
       
       # Generating code
       src = %Q{

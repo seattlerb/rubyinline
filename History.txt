@@ -1,4 +1,11 @@
 ###############################################################################
+2002-12-17 2.1.1				   00 major / 00 minor / 02 bug
+
+	- Fixed a bug in inline.rb where it was comparing against
+	  inline.rb, not the caller.
+	- Tweaked example.rb to take the number of iterations as an option.
+
+###############################################################################
 2002-12-17 2.1.0				   00 major / 02 minor / 04 bug
 
 	+ Added inline_c_raw to replace Inline.inline.
