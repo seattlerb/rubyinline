@@ -18,7 +18,7 @@ $RUBY_INLINE_COMPAT = 0
 
 module Inline
 
-  VERSION = '2.0.0 beta'
+  VERSION = '2.0.0'
 
   def inline(args, prelude, src=nil)
 
@@ -39,10 +39,11 @@ module Inline
     end
     assert_dir_secure(tmpdir)
 
-    myclass = self.class
-    mymethod = self.caller_method_name
-    mod_name = "Mod_#{myclass}_#{mymethod}"
-    so_name = "#{tmpdir}/#{mod_name}.so"
+    myclass   = self.class
+    mymethod  = self.caller_method_name
+    mod_name  = "Mod_#{myclass}_#{mymethod}"
+    extension = Config::CONFIG["DLEXT"]
+    so_name   = "#{tmpdir}/#{mod_name}.#{extension}"
 
     unless File.file? so_name and File.mtime($0) < File.mtime(so_name) then
       # extracted from mkmf.rb
@@ -144,11 +145,14 @@ end # module Inline
 
 class Module
 
+  # FIX: this has been modified to be 1.6 specific... 1.7 has better
+  # options for longs
+
   @@type_map = {
-    'char'         => [ 'NUM2CHR',   'CHR2FIX' ],
-    'unsigned'     => [ 'NUM2ULONG', 'ULONG2NUM' ],
-    'unsigned int' => [ 'NUM2ULONG', 'ULONG2NUM' ],
-    'char *'       => [ 'STR2CSTR',  'rb_str_new2' ],
+    'char'         => [ 'NUM2CHR',  'CHR2FIX' ],
+    'unsigned'     => [ 'NUM2UINT', 'UINT2NUM' ],
+    'unsigned int' => [ 'NUM2UINT', 'UINT2NUM' ],
+    'char *'       => [ 'STR2CSTR', 'rb_str_new2' ],
     
     # slower versions:
     #define INT2NUM(v)
@@ -158,11 +162,11 @@ class Module
     # not sure - faster, but could overflow?
     #define FIX2LONG(x)
     #define LONG2FIX(i)
-    'long' => [ 'NUM2LONG', 'LONG2NUM' ],
+    'long' => [ 'NUM2INT', 'INT2NUM' ],
 
     # not sure
     #define FIX2ULONG(x)
-    'unsigned long' => [ 'NUM2ULONG', 'ULONG2NUM' ],
+    'unsigned long' => [ 'NUM2UINT', 'UINT2NUM' ],
 
     # Can't do these converters
     #define ID2SYM(x)
@@ -264,7 +268,8 @@ class Module
     myclass = self
     mymethod = parse_signature(src)['name']
     mod_name = "Mod_#{myclass}_#{mymethod}"
-    so_name = "#{tmpdir}/#{mod_name}.so"
+    extension = Config::CONFIG["DLEXT"]
+    so_name = "#{tmpdir}/#{mod_name}.#{extension}"  # REFACTOR
 
     unless File.file? so_name and File.mtime($0) < File.mtime(so_name) then
       # extracted from mkmf.rb

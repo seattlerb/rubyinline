@@ -1,4 +1,11 @@
 ###############################################################################
+2002-12-12 2.0.0				   00 major / 00 minor / 02 bug
+
+	- Minor fix to get working on MacOS X (.so vs .bundle).
+	- Downgraded typemap to be compatible with 1.6.x.
+	Paired w/ Doug Beaver <snarly@beaver.net>
+
+###############################################################################
 2002-11-22 2.0.0 beta				   01 major / 02 minor / 03 bug
 
 	! Added inline_c, a "compile-time" version of
@@ -9,6 +16,7 @@
 	- Updated README.txt and improved some of the documentation.
 	- Added test and clean rules to Makefile.
 	- Removed the copious warnings if running ruby < 1.7.2.
+	Paired w/ Doug Beaver <snarly@beaver.net>
 
 ###############################################################################
 2002-11-01 1.1.0				   00 major / 02 minor / 00 bug
