@@ -26,3 +26,8 @@ spec = Gem::Specification.new do |s|
   s.homepage = "http://www.zenspider.com/ZSS/Products/RubyInline/"
   s.rubyforge_project = "rubyinline"
 end
+
+if $0 == __FILE__
+  Gem.manage_gems
+  Gem::Builder.new(spec).build
+end
