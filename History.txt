@@ -1,4 +1,13 @@
 ###############################################################################
+2003-12-23 3.0.0				   03 major / 00 minor / 00 bug
+
+	! Complete rewrite with new design.
+	! Multiple language support, works with C/C++ out of the box.
+	! Multiple functions per compilation unit, now allowing entire
+	  classes to be defined and linked in one unit.
+	- I still need to write much better/complete documentation.
+
+###############################################################################
 2003-01-25 2.2.0				   00 major / 01 minor / 01 bug
 
 	+ Touch all generated files to avoid unnecessary diffs.

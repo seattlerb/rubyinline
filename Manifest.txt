@@ -5,6 +5,7 @@ README.txt
 example.rb
 example2.rb
 inline.rb
+inline-compat.rb
 test_inline.rb
 tutorial/example1.rb
 tutorial/example2.rb
