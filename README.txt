@@ -5,13 +5,46 @@ Ruby Inline
 DESCRIPTION:
   
 Ruby Inline is my quick attempt to create an analog to Perl's
-Inline::C. The ruby version isn't near as feature-full as the perl
+Inline::C. It allows you to imbed C external module code in your ruby
+script directly. The code is compiled and run on the fly when
+needed. The ruby version isn't near as feature-full as the perl
 version, but it is neat!
-  
-FEATURES:
+
+FEATURES/PROBLEMS:
   
 + Quick and easy inlining of your C code embedded in your ruby script.
+- Needs a few more brains to avoid some compiles, but it is so cheap (.21 sec on my box) right now that it might not be worth it.
 - Currently doesn't munge ruby names that aren't compatible in C (ex: a!())
+- Not secure. source and shared libs written into /tmp as-is. 
+
+SYNOPSYS:
+
+  require "inline"
+  class MyTest
+    include Inline
+    def fastfact(*args)
+      inline args, <<-END
+      int i, f=1;
+      for (i = FIX2INT(argv[0]); i >= 1; i--) { f = f * i; }
+      return INT2FIX(f);
+      END
+    end
+  end
+  t = MyTest.new()
+  factorial_5 = t.fastfact(5)
+
+Produces:
+
+  <502> rm /tmp/Mod_MyTest_fastfact.*; ./example.rb 
+  RubyInline 1.0.4
+  Building /tmp/Mod_MyTest_fastfact.so with 'cc -shared -O -pipe  -fPIC -I /usr/local/lib/ruby/1.6/i386-freebsd4'
+  Type = Inline, Iter = 1000000, time = 5.37746200 sec, 0.00000538 sec / iter
+  <503> ./example.rb 
+  RubyInline 1.0.4
+  Type = Inline, Iter = 1000000, time = 5.26147500 sec, 0.00000526 sec / iter
+  <504> ./example.rb native
+  RubyInline 1.0.4
+  Type = Native, Iter = 1000000, time = 24.09801500 sec, 0.00002410 sec / iter
 
 REQUIREMENTS:
 

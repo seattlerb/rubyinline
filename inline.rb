@@ -9,11 +9,24 @@ public :caller_method_name
 
 module Inline
 
-  VERSION = '1.0.4'
+  VERSION = '1.0.5'
 
   def inline(args, src)
 
-    tmpdir = ENV['INLINEDIR'] || "/tmp"
+    tmpdir = ENV['INLINEDIR'] || ENV['HOME'] + "/.ruby_inline"
+
+    unless File.directory? tmpdir then
+      $stderr.puts "NOTE: creating #{tmpdir} for RubyInline"
+      Dir.mkdir(tmpdir, 0700)
+    end
+
+    mode = File.stat(tmpdir).mode
+    unless (mode % 01000) == 0700 then # FIX: not platform independent.
+      $stderr.printf "mode = %o\n", mode
+      $stderr.puts "#{tmpdir} is insecure, needs 0700 for perms" 
+      exit 1
+    end
+
     myclass = self.class
     mymethod = self.caller_method_name
     mod_name = "Mod_#{myclass}_#{mymethod}"
@@ -34,7 +47,7 @@ module Inline
 
       cc = "#{Config::CONFIG['LDSHARED']} #{Config::CONFIG['CFLAGS']} -I #{hdrdir}"
       src_name = "#{tmpdir}/#{mod_name}.c"
-      puts "Building #{so_name} with '#{cc}'"
+      $stderr.puts "Building #{so_name} with '#{cc}'"
 
       s = %Q{
 #include "ruby.h"

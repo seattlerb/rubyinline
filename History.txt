@@ -1,4 +1,17 @@
 ###############################################################################
-2002-09-05 1.0.0				   01 major / 00 minor / 00 bug
+2002-09-11 1.0.5				   00 major / 00 minor / 02 bug
 
-	- Birthday!
+	- Improved security model for UNIX. Still not sure about
+          windoze.
+	- Fixed History.txt to be accurate, gave example in README.
+
+###############################################################################
+2002-09-10 1.0.4				   01 major / 00 minor / 01 bug
+
+	! Released to sourceforge!
+	- A number of very minor bug fixes from IRC sessions w/ others.
+
+###############################################################################
+2002-09-05 1.0.0				   01 major / 00 minor / 00 bug
+ 
+ 	! Birthday!
