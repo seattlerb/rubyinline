@@ -1,4 +1,9 @@
 ###############################################################################
+2004-02-24 3.0.1				   00 major / 00 minor / 01 bug
+
+	- I let references to ZenTestUnit slip through the release. Removed.
+
+###############################################################################
 2003-12-23 3.0.0				   03 major / 00 minor / 00 bug
 
 	! Complete rewrite with new design.

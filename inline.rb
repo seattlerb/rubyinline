@@ -6,7 +6,7 @@ require "ftools"
 $TESTING = false unless defined? $TESTING
 
 module Inline
-  VERSION = '3.0.0'
+  VERSION = '3.0.1'
 
   $stderr.puts "RubyInline v #{VERSION}" if $DEBUG
 
