@@ -221,8 +221,9 @@ module Inline
 
     def build
       rb_file = File.expand_path(caller[1].split(/:/).first) # [MS]
+      so_exists = File.file? @so_name
 
-      unless File.file? @so_name and File.mtime(rb_file) < File.mtime(@so_name)
+      unless so_exists and File.mtime(rb_file) < File.mtime(@so_name)
 	
 	src_name = "#{Inline.directory}/#{@mod_name}.c"
 	old_src_name = "#{src_name}.old"
@@ -254,7 +255,7 @@ module Inline
 
 	# recompile only if the files are different
 	recompile = true
-	if should_compare and File::compare(old_src_name, src_name, $DEBUG) then
+	if so_exists and should_compare and File::compare(old_src_name, src_name, $DEBUG) then
 	  recompile = false
 
 	  # Updates the timestamps on all the generated/compiled files.
