@@ -185,12 +185,12 @@ module Inline
 	end
 	prefix += ") {\n"
 	if arity == MAGIC_ARITY then
-          prefix += "  (void)argc; // shut up unused warnings\n"
 	  count = 0
 	  signature['args'].each do |arg, type|
 	    prefix += "  #{type} #{arg} = #{ruby2c(type)}(argv[#{count}]);\n"
 	    count += 1
 	  end
+          prefix += "  (void)argc; // shut up unused warnings\n"
 	else
 	  signature['args'].each do |arg, type|
 	    prefix += "  #{type} #{arg} = #{ruby2c(type)}(_#{arg});\n"
