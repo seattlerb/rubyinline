@@ -1,12 +1,40 @@
 #!/usr/local/bin/ruby -w
 
+##
+# Ruby Inline is a framework for writing ruby extensions in foreign languages
+# 
+# = SYNOPSIS
+#
+#   require 'inline'
+#   class MyClass
+#     inline do |builder|
+#       builder.include "<math.h>"
+#       builder.c %q{
+#         long factorial(int max) {
+#           int i=max, result=1;
+#           while (i >= 2) { result *= i--; }
+#           return result;
+#         }
+#       }
+#     end
+#   end
+# 
+# = DESCRIPTION
+# 
+# DOC
+#
+
 require "rbconfig"
 require "ftools"
 
 $TESTING = false unless defined? $TESTING
 
+##
+# DOC
+#
+
 module Inline
-  VERSION = '3.0.1'
+  VERSION = '3.1.0'
 
   $stderr.puts "RubyInline v #{VERSION}" if $DEBUG
 
@@ -34,8 +62,12 @@ module Inline
     @@directory
   end
 
+  ##
+  # DOC
+  #
+  
   class C 
-    ############################################################
+
     protected unless $TESTING
 
     MAGIC_ARITY_THRESHOLD = 2
@@ -62,8 +94,6 @@ module Inline
       return @@type_map[type].last if @@type_map.has_key? type
       raise "Unknown type #{type}"
     end
-
-    public if $TESTING ##################################################
 
     def parse_signature(src, raw=false)
       sig = src.dup
@@ -173,45 +203,12 @@ module Inline
       return result # TODO: I only really do this for testing
     end # def generate
 
-    public ############################################################
-
-    attr_accessor :mod, :src, :sig, :flags, :libs if $TESTING
-
-    def initialize(mod)
-      @mod = mod
-      @src = []
-      @sig = {}
-      @flags = []
-      @libs = []
-    end
-
-    def add_compile_flags(*flags)
-      flags.each do |flag|
-	@flags << flag
-      end
-    end
-
-    def add_link_flags(*flags)
-      flags.each do |flag|
-	@libs << flag
-      end
-    end
-
-    def add_type_converter(type, r2c, c2r)
-      $stderr.puts "WARNING: overridding #{type}" if @@type_map.has_key? type
-      @@type_map[type] = [r2c, c2r]
-    end
-
-    def include(header)
-      @src << "#include #{header}"
-    end
-
-    def c src
-      self.generate(src)
-    end
-    
-    def c_raw src
-      self.generate(src, false)
+    def load
+      # REFACTOR: mod_name and so_name should be instvars
+      mod_name = "Mod_#{@mod}"
+      so_name = "#{Inline.directory}/#{mod_name}.#{Config::CONFIG["DLEXT"]}"
+      require "#{so_name}" or raise "require on #{so_name} failed"
+      @mod.class_eval "include #{mod_name}"
     end
 
     def build
@@ -276,21 +273,97 @@ module Inline
 
       else
 	$stderr.puts "#{so_name} is up to date" if $DEBUG
-      end # unless 
+      end # unless (file is out of date)
     end # def build
       
-    def load
-      # REFACTOR: mod_name and so_name should be instvars
-      mod_name = "Mod_#{@mod}"
-      so_name = "#{Inline.directory}/#{mod_name}.#{Config::CONFIG["DLEXT"]}"
-      require "#{so_name}" or raise "require on #{so_name} failed"
-      @mod.class_eval "include #{mod_name}"
+    attr_accessor :mod, :src, :sig, :flags, :libs if $TESTING
+
+    public
+
+    ##
+    # 
+    #
+    
+    def initialize(mod)
+      @mod = mod
+      @src = []
+      @sig = {}
+      @flags = []
+      @libs = []
     end
+
+    ##
+    # Adds compiler options to the compiler command line. 
+    # No preprocessing is done, so you must have all your dashes and everything.
+    #
+    
+    def add_compile_flags(*flags)
+      @flags.push(*flags)
+    end
+
+    ##
+    # Adds linker flags to the link command line.
+    # No preprocessing is done, so you must have all your dashes and everything.
+    #
+    
+    def add_link_flags(*flags)
+      @libs.push(*flags)
+    end
+
+    ##
+    # Registers C type-casts <tt>r2c</tt> and <tt>c2r</tt> for <tt>type</tt>.
+    #
+    
+    def add_type_converter(type, r2c, c2r)
+      $stderr.puts "WARNING: overridding #{type}" if @@type_map.has_key? type
+      @@type_map[type] = [r2c, c2r]
+    end
+
+    ##
+    # DOC
+    #
+    
+    def include(header)
+      @src << "#include #{header}"
+    end
+
+    ##
+    # DOC
+    #
+    
+    def prefix(code)
+      @src << code
+    end
+
+    ##
+    # DOC
+    #
+    
+    def c src
+      self.generate(src)
+    end
+    
+    ##
+    # DOC
+    #
+    
+    def c_raw src
+      self.generate(src, false)
+    end
+
   end # class Inline::C
 end # module Inline
 
+##
+# DOC
+#
+  
 class Module
-  public
+
+  ##
+  # DOC
+  #
+  
   def inline(lang = :C, testing=false)
     require "inline/#{lang}" unless lang == :C
     builder = Inline.const_get(lang).new self
@@ -304,7 +377,16 @@ class Module
   end
 end
 
+##
+# DOC
+#
+  
 class File
+
+  ##
+  # DOC
+  #
+  
   def self.write_with_backup(path) # returns true if file already existed
     
     # if yield throws an exception, we skip the rename & writes
@@ -324,7 +406,16 @@ class File
   end
 end
 
+##
+# DOC
+#
+  
 class Dir
+
+  ##
+  # DOC
+  #
+  
   def self.assert_secure(path)
     mode = File.stat(path).mode
     unless ((mode % 01000) & 0022) == 0 then # WARN: POSIX systems only...

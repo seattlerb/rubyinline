@@ -1,4 +1,5 @@
-RUBY ?= /usr/local/bin/ruby
+RUBY?=/usr/local/bin/ruby
+RDOC?=rdoc18
 
 test:
 	$(RUBY) -I. -w ./test_inline.rb
@@ -8,6 +9,9 @@ examples:
 	rm -rf ~/.ruby_inline; $(RUBY) -I. -w ./example2.rb
 	rm -rf ~/.ruby_inline; $(RUBY) -I. -w ./tutorial/example1.rb
 	rm -rf ~/.ruby_inline; $(RUBY) -I. -w ./tutorial/example2.rb
+
+docs:
+	$(RDOC) --main inline.rb
 
 bench:
 	@echo "Running native"
