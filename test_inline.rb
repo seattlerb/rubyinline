@@ -325,10 +325,10 @@ return INT2FIX(42)}"
     src = "int func(int x, int y, int z) {blah; return x+y+z;}"
 
     expected = "static VALUE func(int argc, VALUE *argv, VALUE self) {
-  (void)argc; // shut up unused warnings
   int x = FIX2INT(argv[0]);
   int y = FIX2INT(argv[1]);
   int z = FIX2INT(argv[2]);
+  (void)argc; // shut up unused warnings
 blah; return INT2FIX(x+y+z);}"
 
     util_generate(src, expected)
