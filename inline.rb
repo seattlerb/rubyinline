@@ -372,8 +372,15 @@ class Module
   # parameter.
   
   def inline(lang = :C, testing=false)
-    require "inline/#{lang}" unless lang == :C
-    builder = Inline.const_get(lang).new self
+
+    begin
+      builder_class = Inline.const_get(lang)
+    rescue NameError
+      require "inline/#{lang}"
+      builder_class = Inline.const_get(lang)
+    end
+
+    builder = builder_class.new self
 
     yield builder
 
