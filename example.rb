@@ -7,8 +7,6 @@ require "inline"
 
 class MyTest
 
-  include Inline
-
   def factorial(n)
     f = 1
     n.downto(1) { |x| f = f * x }
@@ -22,13 +20,15 @@ class MyTest
       return result;
     }"
 
-  def factorial_old(*args)
-    inline args, "
-    int i, f=1;
-    for (i = FIX2INT(argv[0]); i >= 1; i--) { f = f * i; }
-    return INT2FIX(f);
-"
-  end
+  inline_c_raw "
+    #include <math.h>
+    static
+    VALUE
+    factorial_c_raw(int argc, VALUE *argv, VALUE self) {
+      int i, f=1;
+      for (i = FIX2INT(argv[0]); i >= 1; i--) { f = f * i; }
+      return INT2NUM(f);
+    }"
 end
 
 t = MyTest.new()
@@ -36,25 +36,24 @@ t = MyTest.new()
 arg = ARGV.pop || 0
 arg = arg.to_i
 
-puts "RubyInline #{Inline::VERSION}" if $DEBUG
+puts "RubyInline #{INLINE_VERSION}" if $DEBUG
 
-MyTest.send(:alias_method, :factorial_alias, :factorial_old)
+MyTest.send(:alias_method, :factorial_alias, :factorial_c_raw)
 
 def validate(n)
   if n != 120 then puts "ACK! - #{n}"; end
 end
 
 tstart = Time.now
-# FIX: this is bogus so I can swap around groups
 case arg
 when 0 then
   type = "Inline C "
   (1..max).each { |m| n = t.factorial_c(5);     validate(n); }
 when 1 then
-  type = "Alias    "
-  (1..max).each { |m| n = t.factorial_alias(5); validate(n); }
+  type = "InlineRaw"
+  (1..max).each { |m| n = t.factorial_c_raw(5); validate(n); }
 when 2 then
-  type = "InlineOld"
+  type = "Alias    "
   (1..max).each { |m| n = t.factorial_alias(5); validate(n); }
 when 3 then
   type = "Native   "

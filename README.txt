@@ -15,10 +15,11 @@ FEATURES/PROBLEMS:
 + Quick and easy inlining of your C code embedded in your ruby script.
 + Rudimentary automatic conversion between ruby and C basic types
   (char, unsigned, unsigned int, char *, int, long, unsigned long).
++ inline_c_raw exists for when the automatic conversion isn't sufficient.
 + Only recompiles if the C code has changed.
 + Pretends to be secure.
 + Only uses standard ruby libraries, nothing extra to download.
-+ Simple as it can be. Less than 350 lines long... um... sorta simple.
++ Simple as it can be. Less than 230 lines long... um... sorta simple.
 - Currently doesn't munge ruby names that aren't compatible in C (ex: a!())
 
 SYNOPSYS:
@@ -35,31 +36,33 @@ SYNOPSYS:
   t = MyTest.new()
   factorial_5 = t.factorial(5)
 
-Produces:
+(PSEUDO)BENCHMARKS:
 
-  % rm ~/.ruby_inline/*
-  % ./example.rb 0
-  Type = Inline C , Iter = 1000000, T = 7.12203800 sec, 0.00000712 sec / iter
-  % ./example.rb 0
-  Type = Inline C , Iter = 1000000, T = 7.11633600 sec, 0.00000712 sec / iter
-  % ./example.rb 1
-  WARNING: Inline#inline is deprecated, use Module#inline_c
-  Type = Alias    , Iter = 1000000, T = 7.27398900 sec, 0.00000727 sec / iter
-  % ./example.rb 2
-  WARNING: Inline#inline is deprecated, use Module#inline_c
-  Type = InlineOld, Iter = 1000000, T = 7.10194600 sec, 0.00000710 sec / iter
-  % ./example.rb 3
-  Type = Native   , Iter = 1000000, T = 22.10488600 sec, 0.00002210 sec / iter
+  > make bench
+
+  Running native
+  Type = Native   , Iter = 1000000, T = 28.70058100 sec, 0.00002870 sec / iter
+  Running primer - preloads the compiler and stuff
+  With full builds
+  Type = Inline C , Iter = 1000000, T = 7.55118600 sec, 0.00000755 sec / iter
+  Type = InlineRaw, Iter = 1000000, T = 7.54488300 sec, 0.00000754 sec / iter
+  Type = Alias    , Iter = 1000000, T = 7.53243100 sec, 0.00000753 sec / iter
+  Without builds
+  Type = Inline C , Iter = 1000000, T = 7.59543300 sec, 0.00000760 sec / iter
+  Type = InlineRaw, Iter = 1000000, T = 7.54097200 sec, 0.00000754 sec / iter
+  Type = Alias    , Iter = 1000000, T = 7.53654000 sec, 0.00000754 sec / iter
 
 REQUIREMENTS:
 
-+ Ruby - 1.6.7 & 1.7.2 has been used on FreeBSD 4.6.
++ Ruby - 1.6.7 & 1.7.2 has been used on FreeBSD 4.6 and MacOSX.
 + POSIX compliant system (ie pretty much any UNIX, or Cygwin on MS platforms).
 + A C compiler (the same one that compiled your ruby interpreter).
++ test::unit for running tests (http://testunit.talbott.ws/).
 
 INSTALL:
 
-+ no install instructions yet.
++ make test  (optional)
++ make install
 
 LICENSE:
 

@@ -1,4 +1,18 @@
 ###############################################################################
+2002-12-17 2.1.0				   00 major / 02 minor / 04 bug
+
+	+ Added inline_c_raw to replace Inline.inline.
+	+ Removed module Inline as a whole. This gets rid of some
+	  major version incompatibilities, tons of duplicate code, and
+	  just seems to make things happier.
+	- Added a fix from Michael Scholz to fix the use of $0 for file test.
+	- Added private and public declarations since we are invading
+	  class Module.
+	- Fixed tests... oops!
+	- Lots of clean up...
+	Reviewed by Doug Beaver <snarly@beaver.net>
+
+###############################################################################
 2002-12-12 2.0.0				   00 major / 00 minor / 02 bug
 
 	- Minor fix to get working on MacOS X (.so vs .bundle).

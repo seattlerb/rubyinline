@@ -1,17 +1,12 @@
 #!/usr/local/bin/ruby -w
-# this file shows how to REALLY QUICKLY write tests w/o any overhead
-# of dealing with writing implementations.
 
-require 'test/unit/testresult'
-require 'test/unit/testcase'
-load '../../ZenWeb/dev/zentestrunner.rb'
+$TESTING = true
 
+require 'test/unit'
 require 'inline.rb'
 
 # only test classes
 class TestInline < Test::Unit::TestCase
-
-  include Inline
 
   def test_parse_signature
     src = "// stupid cpp comment
@@ -47,7 +42,7 @@ class TestInline < Test::Unit::TestCase
   def test_inline_c_gen_void_nil
     src = "void y() {go_do_something_external;}"
 
-    expected = "static VALUE t_y(int argc, VALUE *argv, VALUE self) {
+    expected = "static VALUE y(int argc, VALUE *argv, VALUE self) {
       go_do_something_external;}"
 
     util_inline_c(src, expected)
@@ -56,7 +51,7 @@ class TestInline < Test::Unit::TestCase
   def test_inline_c_gen_void_void
     src = "void y(void) {go_do_something_external;}"
 
-    expected = "static VALUE t_y(int argc, VALUE *argv, VALUE self) {
+    expected = "static VALUE y(int argc, VALUE *argv, VALUE self) {
       go_do_something_external;}"
 
     util_inline_c(src, expected)
@@ -65,7 +60,7 @@ class TestInline < Test::Unit::TestCase
   def test_inline_c_gen_int_nil
     src = "int x() {return 42}"
 
-    expected = "static VALUE t_x(int argc, VALUE *argv, VALUE self) {
+    expected = "static VALUE x(int argc, VALUE *argv, VALUE self) {
       return INT2FIX(42)}"
 
     util_inline_c(src, expected)
@@ -79,7 +74,7 @@ class TestInline < Test::Unit::TestCase
     }
     "
 
-    expected = "static VALUE t_factorial(int argc, VALUE *argv, VALUE self) {
+    expected = "static VALUE factorial(int argc, VALUE *argv, VALUE self) {
       int n = FIX2INT(argv[0]);
       int i, f=1;
       for (i = n; i >= 1; i--) { f = f * i; }
@@ -103,7 +98,7 @@ class TestInline < Test::Unit::TestCase
     expected = "
     #include \"header.h\"
 
-    static VALUE t_add(int argc, VALUE *argv, VALUE self) {
+    static VALUE add(int argc, VALUE *argv, VALUE self) {
       int x = FIX2INT(argv[0]);
       int y = FIX2INT(argv[1]);
       return INT2FIX(x+y);
@@ -116,8 +111,8 @@ class TestInline < Test::Unit::TestCase
   def test_inline_c_gen_ulong_void_wonky
     src = "unsigned\nlong z(void) {return 42}"
 
-    expected = "static VALUE t_z(int argc, VALUE *argv, VALUE self) {
-      return ULONG2NUM(42)}"
+    expected = "static VALUE z(int argc, VALUE *argv, VALUE self) {
+      return UINT2NUM(42)}"
 
     util_inline_c(src, expected)
   end
@@ -125,7 +120,7 @@ class TestInline < Test::Unit::TestCase
   def test_inline_c_gen_compact
     src = "int add(int x, int y) {return x+y}"
 
-    expected = "static VALUE t_add(int argc, VALUE *argv, VALUE self) {
+    expected = "static VALUE add(int argc, VALUE *argv, VALUE self) {
       int x = FIX2INT(argv[0]);
       int y = FIX2INT(argv[1]);
       return INT2FIX(x+y)}"
@@ -136,7 +131,7 @@ class TestInline < Test::Unit::TestCase
   def test_inline_c_str_str
     src = "char\n\*\n  blah(  char*s) {puts(s); return s}"
 
-    expected = "static VALUE t_blah(int argc, VALUE *argv, VALUE self) {
+    expected = "static VALUE blah(int argc, VALUE *argv, VALUE self) {
       char * s = STR2CSTR(argv[0]);
       puts(s); return rb_str_new2(s)}"
 
@@ -144,6 +139,3 @@ class TestInline < Test::Unit::TestCase
   end
 end
 
-if __FILE__ == $0 then
-  run_all_tests_with(ZenTestRunner)
-end
