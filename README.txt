@@ -11,6 +11,7 @@ version, but it is neat!
 FEATURES:
   
 + Quick and easy inlining of your C code embedded in your ruby script.
+- Currently doesn't munge ruby names that aren't compatible in C (ex: a!())
 
 REQUIREMENTS:
 
