@@ -44,7 +44,7 @@ class CompilationError < RuntimeError; end
 # the current namespace.
 
 module Inline
-  VERSION = '3.2.0'
+  VERSION = '3.2.1'
 
   $stderr.puts "RubyInline v #{VERSION}" if $DEBUG
 
@@ -185,6 +185,7 @@ module Inline
 	end
 	prefix += ") {\n"
 	if arity == MAGIC_ARITY then
+          prefix += "  (void)argc; // shut up unused warnings\n"
 	  count = 0
 	  signature['args'].each do |arg, type|
 	    prefix += "  #{type} #{arg} = #{ruby2c(type)}(argv[#{count}]);\n"

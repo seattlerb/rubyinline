@@ -1,3 +1,8 @@
+*** 3.2.1 / 2004-12-07
+
++ 1 bug fix
+	+ argc/argv/self form now forces use of argc to quell warnings.
+
 *** 3.2.0 / 2004-11-27
 
 + 8 minor enhancements

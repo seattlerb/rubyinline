@@ -324,7 +324,12 @@ return INT2FIX(42)}"
   def test_generate_arity_3
     src = "int func(int x, int y, int z) {blah; return x+y+z;}"
 
-    expected = "static VALUE func(int argc, VALUE *argv, VALUE self) {\n  int x = FIX2INT(argv[0]);\n  int y = FIX2INT(argv[1]);\n  int z = FIX2INT(argv[2]);\nblah; return INT2FIX(x+y+z);}"
+    expected = "static VALUE func(int argc, VALUE *argv, VALUE self) {
+  (void)argc; // shut up unused warnings
+  int x = FIX2INT(argv[0]);
+  int y = FIX2INT(argv[1]);
+  int z = FIX2INT(argv[2]);
+blah; return INT2FIX(x+y+z);}"
 
     util_generate(src, expected)
   end
