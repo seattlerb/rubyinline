@@ -1,104 +1,111 @@
-###############################################################################
-2004-02-24 3.0.1				   00 major / 00 minor / 01 bug
+*** 3.0.1 / 2004-02-24
 
-	- I let references to ZenTestUnit slip through the release. Removed.
++ 2 bug fixes
+	+ I let references to ZenTestUnit slip through the release. Removed.
+	+ Converted History.txt to ZenWeb format.
 
-###############################################################################
-2003-12-23 3.0.0				   03 major / 00 minor / 00 bug
+*** 3.0.0 / 2003-12-23
 
-	! Complete rewrite with new design.
-	! Multiple language support, works with C/C++ out of the box.
-	! Multiple functions per compilation unit, now allowing entire
-	  classes to be defined and linked in one unit.
-	- I still need to write much better/complete documentation.
++ 3 major enhancements
+	+ Complete rewrite with new design.
+	+ Multiple language support, works with C/C++ out of the box.
+	+ Multiple functions per compilation unit, now allowing entire classes to be defined and linked in one unit.
++ Notes:
+	+ I still need to write much better/complete documentation.
 
-###############################################################################
-2003-01-25 2.2.0				   00 major / 01 minor / 01 bug
+*** 2.2.0 / 2003-01-25
 
++ 1 minor enhancements
 	+ Touch all generated files to avoid unnecessary diffs.
-	- Added good profiling example in tutorial/*.
-	- Added profiling strategy in README.txt.
-	Paired with Doug Beaver <snarly@beaver.net>
++ 1 bug fixes
+	+ Added good profiling example in tutorial/*.
+	+ Added profiling strategy in README.txt.
++ Notes:
+	+ Paired with Doug Beaver <snarly@beaver.net>
 
-###############################################################################
-2002-12-27 2.1.1				   00 major / 00 minor / 02 bug
+*** 2.1.1 / 2002-12-27
 
-	- Fixed a bug in inline.rb where it was comparing against
-	  inline.rb, not the caller.
-	- Tweaked example.rb to take the number of iterations as an option.
++ 2 bug fixes
+	+ Fixed a bug in inline.rb where it was comparing against inline.rb, not the caller.
+	+ Tweaked example.rb to take the number of iterations as an option.
 
-###############################################################################
-2002-12-17 2.1.0				   00 major / 02 minor / 04 bug
+*** 2.1.0 / 2002-12-17
 
++ 2 minor enhancements
 	+ Added inline_c_raw to replace Inline.inline.
 	+ Removed module Inline as a whole. This gets rid of some
-	  major version incompatibilities, tons of duplicate code, and
-	  just seems to make things happier.
-	- Added a fix from Michael Scholz to fix the use of $0 for file test.
-	- Added private and public declarations since we are invading
-	  class Module.
-	- Fixed tests... oops!
-	- Lots of clean up...
-	Reviewed by Doug Beaver <snarly@beaver.net>
+	+ major version incompatibilities, tons of duplicate code, and
+	+ just seems to make things happier.
++ 4 bug fixes
+	+ Added a fix from Michael Scholz to fix the use of $0 for file test.
+	+ Added private and public declarations since we are invading
+	+ class Module.
+	+ Fixed tests... oops!
+	+ Lots of clean up...
++ Notes:
+	+ Reviewed by Doug Beaver <snarly@beaver.net>
 
-###############################################################################
-2002-12-12 2.0.0				   00 major / 00 minor / 02 bug
+*** 2.0.0 / 2002-12-12
 
-	- Minor fix to get working on MacOS X (.so vs .bundle).
-	- Downgraded typemap to be compatible with 1.6.x.
-	Paired w/ Doug Beaver <snarly@beaver.net>
++ 2 bug fixes
+	+ Minor fix to get working on MacOS X (.so vs .bundle).
+	+ Downgraded typemap to be compatible with 1.6.x.
++ Notes:
+	+ Paired w/ Doug Beaver <snarly@beaver.net>
 
-###############################################################################
-2002-11-22 2.0.0 beta				   01 major / 02 minor / 03 bug
+*** 2.0.0 beta / 2002-11-22
 
-	! Added inline_c, a "compile-time" version of
-	  inline. Massively enhanced, this version has a limited form of
-	  C function parsing.
++ 1 major enhancements
+	+ Added inline_c, a "compile-time" version of inline. Massively enhanced, this version has a limited form of C function parsing.
++ 2 minor enhancements
 	+ Deprecated Inline#inline for Module#inline_c. To be removed by 2.1.0.
 	+ Extended example.rb to include a fully written inlined C function.
-	- Updated README.txt and improved some of the documentation.
-	- Added test and clean rules to Makefile.
-	- Removed the copious warnings if running ruby < 1.7.2.
-	Paired w/ Doug Beaver <snarly@beaver.net>
++ 3 bug fixes
+	+ Updated README.txt and improved some of the documentation.
+	+ Added test and clean rules to Makefile.
+	+ Removed the copious warnings if running ruby < 1.7.2.
++ Notes:
+	+ Paired w/ Doug Beaver <snarly@beaver.net>
 
-###############################################################################
-2002-11-01 1.1.0				   00 major / 02 minor / 00 bug
+*** 1.1.0 / 2002-11-01
 
++ 2 minor enhancements
 	+ Aliased methods are now inlined as well. 250x faster.
-	  ONLY on ruby 1.7+. Warns on ruby < 1.7.
+	+ ONLY on ruby 1.7+. Warns on ruby < 1.7.
 	+ Added a makefile to automate running of all different benchmarks.
-	- Improved example to include an aliased method testcase.
++ 1 bug fixes
+	+ Improved example to include an aliased method testcase.
 
-###############################################################################
-2002-09-22 1.0.7				   00 major / 01 minor / 01 bug
+*** 1.0.7 / 2002-09-22
 
-	+ Only compiles the generated code if it was different from
-          the previous version.
-	- Improved security: Checks group and global write on home
-	  directory.
++ 1 minor enhancements
+	+ Only compiles the generated code if it was different from the previous version.
++ 1 bug fixes
+	+ Improved security: Checks group and global write on home directory.
 
-###############################################################################
-2002-09-18 1.0.6				   00 major / 01 minor / 03 bug
+*** 1.0.6 / 2002-09-18
 
++ 1 minor enhancements
 	+ Added a prelude argument for header and datatype declarations.
-	- Only output stuff if invoked verbose (ie 'ruby -v ./example.rb').
-	- Added some compatibility code for windows.
-	- Declared requirement on POSIX system.
++ 3 bug fixes
+	+ Only output stuff if invoked verbose (ie 'ruby -v ./example.rb').
+	+ Added some compatibility code for windows.
+	+ Declared requirement on POSIX system.
 
-###############################################################################
-2002-09-11 1.0.5				   00 major / 00 minor / 02 bug
+*** 1.0.5 / 2002-09-11
 
-	- Improved security model for UNIX. Still not sure about
-          windoze.
-	- Fixed History.txt to be accurate, gave example in README.
++ 2 bug fixes
+	+ Improved security model for UNIX. Still not sure about windoze.
+	+ Fixed History.txt to be accurate, gave example in README.
 
-###############################################################################
-2002-09-10 1.0.4				   01 major / 00 minor / 01 bug
+*** 1.0.4 / 2002-09-10
 
-	! Released to sourceforge!
-	- A number of very minor bug fixes from IRC sessions w/ others.
++ 1 major enhancements
+	+ Released to sourceforge!
++ 1 bug fixes
+	+ A number of very minor bug fixes from IRC sessions w/ others.
 
-###############################################################################
-2002-09-05 1.0.0				   01 major / 00 minor / 00 bug
- 
- 	! Birthday!
+*** 1.0.0 / 2002-09-05
+
++ 1 major enhancements
+	+ Birthday!
