@@ -3,13 +3,10 @@
 $TESTING = true
 
 require 'inline'
+require 'tempfile'
 require 'test/unit'
 
 File.umask(0)
-
-#class TestFile < Test::Unit::TestCase
-# TODO def test_write_with_backup
-#end
 
 class TestDir < Test::Unit::TestCase
 
@@ -32,7 +29,7 @@ class TestDir < Test::Unit::TestCase
 	Dir.assert_secure path
       end
     else
-      assert_raises(perms.nil? ? Errno::ENOENT : RuntimeError) do
+      assert_raises(perms.nil? ? Errno::ENOENT : SecurityError) do
 	Dir.assert_secure path
       end
     end
@@ -103,7 +100,7 @@ class TestC < Test::Unit::TestCase
     assert_equal 'NUM2UINT', x.ruby2c("unsigned long")
     assert_equal 'NUM2UINT', x.ruby2c("unsigned")
 
-    assert_raises RuntimeError do
+    assert_raises ArgumentError do
       x.ruby2c('blah')
     end
   end
@@ -118,7 +115,7 @@ class TestC < Test::Unit::TestCase
     assert_equal 'UINT2NUM',    x.c2ruby("unsigned long")
     assert_equal 'UINT2NUM',    x.c2ruby("unsigned")
 
-    assert_raises RuntimeError do
+    assert_raises ArgumentError do
       x.c2ruby('blah')
     end
   end
@@ -450,12 +447,95 @@ puts(s); return rb_str_new2(s)}"
     assert_equal [expected], builder.src
   end
 
-  # I have _no_ idea how to test these
-  # TODO def test_build
-  # TODO def test_load
+  def util_simple_code(klassname, c_src)
+    result = "
+      require 'inline'
+
+      class #{klassname}
+        inline do |builder|
+          builder.c <<-EOC
+            #{c_src}
+          EOC
+        end
+      end"
+    result
+  end
+
+  def util_test_build(src)
+    tempfile = Tempfile.new("util_test_build")
+    tempfile.write src
+    tempfile.flush
+    tempfile.rewind
+    rb_file = tempfile.path + ".rb"
+    File.rename tempfile.path, rb_file
+    begin
+      Kernel.module_eval { require rb_file }
+      yield if block_given?
+    rescue Exception => err
+      raise err
+    ensure
+      File.unlink rb_file
+    end
+  end
+
+  def test_build_good
+    code = util_simple_code(:DumbTest1, "long dumbpi() { return 314; }")
+    util_test_build(code) do
+      result = DumbTest1.new.dumbpi
+      assert_equal(314, result)
+    end
+  end
+
+  def test_build_bad
+    code = util_simple_code(:DumbTest2, "void should_puke() { 1+1  2+2 }")
+    assert_raises(CompilationError) do 
+      util_test_build(code) do
+        flunk
+      end
+    end
+  end
+
+  def test_load
+    # totally tested by test_build
+  end
 
 end # class TestC
 end # class TestInline
+
+$test_module_code = <<-EOR
+module Foo
+  class Bar
+    inline do |builder|
+      builder.c <<-EOC
+        static int forty_two_instance() { return 42; }
+      EOC
+      builder.c_singleton <<-EOC
+        static int twenty_four_class() { return 24; }
+      EOC
+    end
+  end
+end
+EOR
+
+$test_module_code2 = <<-EOR
+require 'inline'
+
+# Demonstrates native functions in nested classes and
+# extending a class more than once from different ruby
+# source files
+module Foo
+  class Bar
+    inline do |builder|
+      builder.c <<-EOC
+        int twelve_instance() { return 12; }
+      EOC
+      builder.c_singleton <<-EOC
+        int twelve_class() { return 12; }
+      EOC
+    end
+  end
+end
+EOR
 
 class TestModule < Test::Unit::TestCase
 
@@ -468,19 +548,35 @@ class TestModule < Test::Unit::TestCase
     `rm -rf #{@rootdir}` unless $DEBUG
   end
 
+  def test_nested
+    Object.class_eval $test_module_code
+    fb = Foo::Bar.new
+    assert_equal(fb.forty_two_instance, 42)
+    assert_equal(Foo::Bar.twenty_four_class, 24)
+
+    tempfile = Tempfile.new("test_inline_nested")
+    tempfile.write($test_module_code2)
+    tempfile.flush
+    tempfile.rewind
+    `cp #{tempfile.path} #{tempfile.path}.rb`
+    require "#{tempfile.path}.rb"
+    assert_equal(fb.twelve_instance,12)
+    assert_equal(Foo::Bar.twelve_class,12)
+    `rm "#{tempfile.path}.rb"`
+  end
+
   def test_inline
     self.class.inline(:C) do |builder|
       builder.c "int add(int a, int b) { return a + b; }"
     end
     assert(test(?d, Inline.directory),
 	   "inline dir should have been created")
-    assert(test(?f, File.join(Inline.directory, "Mod_TestModule.c")),
+    matches = Dir[File.join(Inline.directory, "Inline_TestModule_test_inline_rb_*.c")]
+    assert_equal(matches.length,1,
 	   "Source should have been created")
-    assert(test(?f, File.join(Inline.directory,
-			      "Mod_TestModule.#{Config::CONFIG["DLEXT"]}")),
-	   "Source should have been created")
+    library_file = matches.first.gsub(/\.c$/) { "." + Config::CONFIG["DLEXT"] }
+    assert(test(?f, library_file),
+	   "Library file should have been created")
   end
 
 end
-
-# Number of errors detected: 4

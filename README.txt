@@ -5,22 +5,22 @@
 
 ** DESCRIPTION:
 
-Ruby Inline is my quick attempt to create an analog to Perl's
-Inline::C. It allows you to embed C or C++ external module code in
-your ruby script directly. The code is compiled and run on the fly
-when needed. The ruby version isn't near as feature-full as the perl
-version, but it is neat!
+Ruby Inline is an analog to Perl's Inline::C. Out of the box, it
+allows you to embed C/++ external module code in your ruby script
+directly. By writing simple builder classes, you can teach how to cope
+with new languages (fortran, perl, whatever). The code is compiled and
+run on the fly when needed.
 
 ** FEATURES/PROBLEMS:
 
 + Quick and easy inlining of your C or C++ code embedded in your ruby script.
-+ Rudimentary automatic conversion between ruby and C basic types
-  (char, unsigned, unsigned int, char *, int, long, unsigned long).
++ Extendable to work with other languages.
++ Automatic conversion between ruby and C basic types
+	+ char, unsigned, unsigned int, char *, int, long, unsigned long
 + inline_c_raw exists for when the automatic conversion isn't sufficient.
 + Only recompiles if the inlined code has changed.
 + Pretends to be secure.
 + Only uses standard ruby libraries, nothing extra to download.
-+ Simple as it can be. Less than 230 lines long... um... sorta simple.
 
 ** SYNOPSYS:
 
@@ -82,10 +82,11 @@ version, but it is neat!
 
 ** REQUIREMENTS:
 
-+ Ruby - 1.6.7 & 1.7.2 has been used on FreeBSD 4.6 and MacOSX.
++ Ruby - 1.6.7 & 1.8.2 has been used on FreeBSD 4.6+ and MacOSX.
 + POSIX compliant system (ie pretty much any UNIX, or Cygwin on MS platforms).
 + A C/C++ compiler (the same one that compiled your ruby interpreter).
 + test::unit for running tests ( http://testunit.talbott.ws/ ).
++ rubygems if you'd like.
 
 ** INSTALL:
 

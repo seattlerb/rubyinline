@@ -32,8 +32,11 @@
 
 require "rbconfig"
 require "ftools"
+require "digest/md5"
 
 $TESTING = false unless defined? $TESTING
+
+class CompilationError < RuntimeError; end
 
 # The Inline module is the top-level module used. It is responsible
 # for instantiating the builder for the right language used,
@@ -96,12 +99,12 @@ module Inline
     }
 
     def ruby2c(type)
-      raise "Unknown type #{type}" unless @@type_map.has_key? type
+      raise ArgumentError, "Unknown type #{type}" unless @@type_map.has_key? type
       @@type_map[type].first
     end
 
     def c2ruby(type)
-      raise "Unknown type #{type}" unless @@type_map.has_key? type
+      raise ArgumentError, "Unknown type #{type}" unless @@type_map.has_key? type
       @@type_map[type].last
     end
 
@@ -152,11 +155,17 @@ module Inline
 	}
       end
 
-      raise "Bad parser exception: #{sig}"
+      raise SyntaxError, "Can't parse signature: #{sig}"
     end # def parse_signature
 
-    def generate(src, expand_types=true)
+    def generate(src, options={})
 
+      if not Hash === options then
+        options = {:expand_types=>options}
+      end
+
+      expand_types = options[:expand_types]
+      singleton = options[:singleton]
       result = self.strip_comments(src)
 
       signature = parse_signature(src, !expand_types)
@@ -190,7 +199,7 @@ module Inline
 	result.sub!(/[^;\/\"\>]+#{function_name}\s*\([^\{]+\{/, "\n" + prefix)
 	result.sub!(/\A\n/, '') # strip off the \n in front in case we added it
 	unless return_type == "void" then
-	  raise "couldn't find return statement for #{function_name}" unless 
+	  raise SyntaxError, "Couldn't find return statement for #{function_name}" unless 
 	    result =~ /return/ 
 	  result.gsub!(/return\s+([^\;\}]+)/) do
 	    "return #{c2ruby(return_type)}(#{$1})"
@@ -205,10 +214,10 @@ module Inline
       end
 
       file, line = caller[1].split(/:/)
-      result = "# line #{line} \"#{file}\"\n" + result
+      result = "# line #{line.to_i - 1} \"#{file}\"\n" + result
 
       @src << result
-      @sig[function_name] = arity
+      @sig[function_name] = [arity,singleton]
 
       return result if $TESTING
     end # def generate
@@ -218,15 +227,14 @@ module Inline
     public
 
     def load
-      require "#{@so_name}" or raise "require on #{@so_name} failed"
-      @mod.class_eval "include #{@mod_name}"
+      require "#{@so_name}" or raise LoadError, "require on #{@so_name} failed"
     end
 
     def build
       rb_file = File.expand_path(caller[1].split(/:/).first) # [MS]
       so_exists = File.file? @so_name
 
-      unless so_exists and File.mtime(rb_file) < File.mtime(@so_name)
+      unless so_exists and File.mtime(@rb_file) < File.mtime(@so_name)
 	
 	src_name = "#{Inline.directory}/#{@mod_name}.c"
 	old_src_name = "#{src_name}.old"
@@ -237,15 +245,21 @@ module Inline
 	  io.puts @src.join("\n\n")
 	  io.puts
 	  io.puts
-	  io.puts "  VALUE c#{@mod_name};"
 	  io.puts "#ifdef __cplusplus"
 	  io.puts "extern \"C\" {"
 	  io.puts "#endif"
 	  io.puts "  void Init_#{@mod_name}() {"
-	  io.puts "    c#{@mod_name} = rb_define_module(\"#{@mod_name}\");"
+          io.puts "    VALUE c = rb_cObject;"
+          @mod.name.split("::").each do |n|
+            io.puts "    c = rb_const_get_at(c,rb_intern(\"#{n}\"));"
+          end
 	  @sig.keys.sort.each do |name|
-	    arity = @sig[name]
-	    io.print "   rb_define_method(c#{@mod_name}, \"#{name}\", "
+	    arity, singleton = @sig[name]
+            if singleton then
+              io.print "    rb_define_singleton_method(c, \"#{name}\", "
+            else
+	      io.print "    rb_define_method(c, \"#{name}\", "
+            end
 	    io.puts  "(VALUE(*)(ANYARGS))#{name}, #{arity});"
 	  end
 	  io.puts
@@ -258,13 +272,15 @@ module Inline
 
 	# recompile only if the files are different
 	recompile = true
-	if so_exists and should_compare and File::compare(old_src_name, src_name, $DEBUG) then
+	if so_exists and should_compare and
+            File::compare(old_src_name, src_name, $DEBUG) then
 	  recompile = false
 
 	  # Updates the timestamps on all the generated/compiled files.
 	  # Prevents us from entering this conditional unless the source
 	  # file changes again.
-	  File.utime(Time.now, Time.now, src_name, old_src_name, @so_name)
+          t = Time.now
+	  File.utime(t, t, src_name, old_src_name, @so_name)
 	end
 
 	if recompile then
@@ -291,10 +307,16 @@ module Inline
 	  if /mswin32/ =~ RUBY_PLATFORM then
 	    cmd += " -link /INCREMENTAL:no /EXPORT:Init_#{@mod_name}"
 	  end
+
+          cmd += " 2> /dev/null" if $TESTING
 	  
 	  $stderr.puts "Building #{@so_name} with '#{cmd}'" if $DEBUG
 	  `#{cmd}`
-	  raise "error executing #{cmd}: #{$?}" if $? != 0
+          if $? != 0 then
+            bad_src_name = src_name + ".bad"
+            File.rename src_name, bad_src_name
+            raise CompilationError, "error executing #{cmd}: #{$?}\nRenamed #{src_name} to #{bad_src_name}"
+          end
 	  $stderr.puts "Built successfully" if $DEBUG
 	end
 
@@ -303,10 +325,20 @@ module Inline
       end # unless (file is out of date)
     end # def build
       
+    attr_reader :mod
     def initialize(mod)
       @mod = mod
-      @mod_name = "Mod_#{@mod}"
-      @so_name = "#{Inline.directory}/#{@mod_name}.#{Config::CONFIG["DLEXT"]}"
+      if @mod then
+        # Figure out which script file defined the C code
+        @rb_file = File.expand_path(caller[2].split(/:/).first) # [MS]
+        # Extract the basename of the script and clean it up to be 
+        # a valid C identifier
+        rb_script_name = File.basename(@rb_file).gsub(/[^a-zA-Z0-9_]/,'_')
+        # Hash the full path to the script
+        suffix = Digest::MD5.new(@rb_file).to_s[0,4]
+        @mod_name = "Inline_#{@mod.name.gsub('::','__')}_#{rb_script_name}_#{suffix}"
+        @so_name = "#{Inline.directory}/#{@mod_name}.#{Config::CONFIG["DLEXT"]}"
+      end
       @src = []
       @sig = {}
       @flags = []
@@ -354,7 +386,11 @@ module Inline
     # conversions can be extended by using +add_type_converter+.
     
     def c src
-      self.generate(src)
+      self.generate(src,:expand_types=>true)
+    end
+
+    def c_singleton src
+      self.generate(src,:expand_types=>true,:singleton=>true)
     end
     
     # Adds a raw C function to the source. This version does not
@@ -362,7 +398,11 @@ module Inline
     # coding conventions.
     
     def c_raw src
-      self.generate(src, false)
+      self.generate(src)
+    end
+
+    def c_raw_singleton src
+      self.generate(src, :singleton=>true)
     end
 
   end # class Inline::C
@@ -428,9 +468,9 @@ class Dir
     mode = File.stat(path).mode
     unless ((mode % 01000) & 0022) == 0 then
       if $TESTING then
-	raise 'InsecureDir'
+	raise SecurityError, "Directory #{path} is insecure"
       else
-	$stderr.puts "#{path} is insecure (#{sprintf('%o', mode)}), needs 0700 for perms"
+	$stderr.puts "#{path} is insecure (#{sprintf('%o', mode)}), needs 0700 for perms. Exiting."
 	exit 1
       end
     end

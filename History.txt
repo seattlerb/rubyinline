@@ -1,9 +1,18 @@
-*** 3.2.0 / 2004-11-24
+*** 3.2.0 / 2004-11-27
 
-+ 3 minor enhancement
++ 8 minor enhancements
 	+ Gemified
 	+ Added #line preprocessor directives to make debugging inside your ruby file practical.
+	+ Added uninstall rule to Makefile
+	+ Inline::C now generates classes directly instead of included modules.
+	+ Better execeptions are thrown on error.
+	+ Incorporated a bunch of changes from Jonathan Paisley:
+		+ Generation of inline'd class methods. (c_singleton and c_raw_singleton)
+		+ Fixed problems with nested module/classes.
+		+ Inline can now extend the same class multiple times.
++ 2 bug fixes
 	+ Smarter require/instantiation to accomodate other languages better.
+	+ Fixed a logic error where running good code, then bad, then bad again ran the original good code.
 
 *** 3.1.0 / 2004-09-24
 
