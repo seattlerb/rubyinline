@@ -11,6 +11,7 @@ spec = Gem::Specification.new do |s|
 
   paragraphs = File.read("README.txt").split(/\n\n+/)
   s.description = paragraphs[3]
+  puts s.description
 
   s.requirements << "A POSIX environment and a compiler for your language."
   s.files = IO.readlines("Manifest.txt").map {|f| f.chomp }
