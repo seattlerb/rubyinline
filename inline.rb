@@ -1,8 +1,8 @@
 #!/usr/local/bin/ruby -w
 
-##
-# Ruby Inline is a framework for writing ruby extensions in foreign languages
-# 
+# Ruby Inline is a framework for writing ruby extensions in foreign
+# languages
+#
 # = SYNOPSIS
 #
 #   require 'inline'
@@ -21,22 +21,31 @@
 # 
 # = DESCRIPTION
 # 
-# DOC
+# Inline allows you to write C/C++ code within your ruby code. It
+# automatically determines if the code in question has changed and
+# builds it only when necessary. The extensions are then automatically
+# loaded into the class/module that defines it.
 #
+# You can even write extra builders that will allow you to write
+# inlined code in any language. Use Inline::C as a template and look
+# at Module#inline for the required API.
 
 require "rbconfig"
 require "ftools"
 
 $TESTING = false unless defined? $TESTING
 
-##
-# DOC
-#
+# The Inline module is the top-level module used. It is responsible
+# for instantiating the builder for the right language used,
+# compilation/linking when needed, and loading the inlined code into
+# the current namespace.
 
 module Inline
   VERSION = '3.1.0'
 
   $stderr.puts "RubyInline v #{VERSION}" if $DEBUG
+
+  protected
 
   def self.rootdir
     unless defined? @@rootdir and test ?d, @@rootdir then
@@ -51,7 +60,7 @@ module Inline
 
   def self.directory
     unless defined? @@directory and test ?d, @@directory then
-      directory = rootdir + "/.ruby_inline" # TODO Dir.join
+      directory = File.join(rootdir, ".ruby_inline")
       unless File.directory? directory then
 	$stderr.puts "NOTE: creating #{directory} for RubyInline" if $DEBUG
 	Dir.mkdir directory, 0700
@@ -62,9 +71,10 @@ module Inline
     @@directory
   end
 
-  ##
-  # DOC
-  #
+  # Inline::C is the default builder used and the only one provided by
+  # Inline. It can be used as a template to write builders for other
+  # languages. It understands type-conversions for the basic types and
+  # can be extended as needed.
   
   class C 
 
@@ -86,22 +96,26 @@ module Inline
     }
 
     def ruby2c(type)
-      return @@type_map[type].first if @@type_map.has_key? type
-      raise "Unknown type #{type}"
+      raise "Unknown type #{type}" unless @@type_map.has_key? type
+      @@type_map[type].first
     end
 
     def c2ruby(type)
-      return @@type_map[type].last if @@type_map.has_key? type
-      raise "Unknown type #{type}"
+      raise "Unknown type #{type}" unless @@type_map.has_key? type
+      @@type_map[type].last
     end
 
-    def parse_signature(src, raw=false)
-      sig = src.dup
-
+    def strip_comments(src)
       # strip c-comments
-      sig.gsub!(/(?:(?:\/\*)(?:(?:(?!\*\/)[\s\S])*)(?:\*\/))/, '')
+      src = src.gsub(/\s*(?:(?:\/\*)(?:(?:(?!\*\/)[\s\S])*)(?:\*\/))/, '')
       # strip cpp-comments
-      sig.gsub!(/(?:\/\*(?:(?!\*\/)[\s\S])*\*\/|\/\/[^\n]*\n)/, '')
+      src.gsub!(/\s*(?:\/\*(?:(?!\*\/)[\s\S])*\*\/|\/\/[^\n]*\n)/, '')
+      src
+    end
+    
+    def parse_signature(src, raw=false)
+
+      sig = self.strip_comments(src)
       # strip preprocessor directives
       sig.gsub!(/^\s*\#.*(\\\n.*)*/, '')
       # strip {}s
@@ -116,14 +130,12 @@ module Inline
 	args = []
 	arg_string.split(',').each do |arg|
 
-	  # ACK! see if we can't make this go away (FIX)
 	  # helps normalize into 'char * varname' form
 	  arg = arg.gsub(/\s*\*\s*/, ' * ').strip
 
 	  # if /(#{types})\s+(\w+)\s*$/ =~ arg
 	  if /(((#{types})\s*\*?)+)\s+(\w+)\s*$/ =~ arg then
 	    args.push([$4, $1])
-	    # args.push([$2, $1])
 	  elsif arg != "void" then
 	    $stderr.puts "WARNING: '#{arg}' not understood"
 	  end
@@ -144,13 +156,8 @@ module Inline
     end # def parse_signature
 
     def generate(src, expand_types=true)
-      result = src.dup
 
-      # REFACTOR: this is duplicated from above
-      # strip c-comments
-      result.gsub!(/(?:(?:\/\*)(?:(?:(?!\*\/)[\s\S])*)(?:\*\/))/, '')
-      # strip cpp-comments
-      result.gsub!(/(?:\/\*(?:(?!\*\/)[\s\S])*\*\/|\/\/[^\n]*\n)/, '')
+      result = self.strip_comments(src)
 
       signature = parse_signature(src, !expand_types)
       function_name = signature['name']
@@ -200,33 +207,49 @@ module Inline
       @src << result
       @sig[function_name] = arity
 
-      return result # TODO: I only really do this for testing
+      return result if $TESTING
     end # def generate
 
+    attr_accessor :mod, :src, :sig, :flags, :libs if $TESTING
+
+    public
+
     def load
-      # REFACTOR: mod_name and so_name should be instvars
-      mod_name = "Mod_#{@mod}"
-      so_name = "#{Inline.directory}/#{mod_name}.#{Config::CONFIG["DLEXT"]}"
-      require "#{so_name}" or raise "require on #{so_name} failed"
-      @mod.class_eval "include #{mod_name}"
+      require "#{@so_name}" or raise "require on #{@so_name} failed"
+      @mod.class_eval "include #{@mod_name}"
     end
 
     def build
-      mod_name = "Mod_#{@mod}"
-      so_name = "#{Inline.directory}/#{mod_name}.#{Config::CONFIG["DLEXT"]}"
       rb_file = File.expand_path(caller[1].split(/:/).first) # [MS]
 
-      unless File.file? so_name and File.mtime(rb_file) < File.mtime(so_name)
+      unless File.file? @so_name and File.mtime(rb_file) < File.mtime(@so_name)
 	
-	src_name = "#{Inline.directory}/#{mod_name}.c"
+	src_name = "#{Inline.directory}/#{@mod_name}.c"
 	old_src_name = "#{src_name}.old"
-	should_compare = File.write_with_backup(src_name) do |src|
-	  src << %Q^\n#include "ruby.h"\n\n#{@src.join("\n\n")}\n\n  VALUE c#{mod_name};\n#ifdef __cplusplus\nextern "C" \{\n#endif\n  void Init_#{mod_name}() \{\n    c#{mod_name} = rb_define_module("#{mod_name}");\n^
+	should_compare = File.write_with_backup(src_name) do |io|
+	  io.puts
+	  io.puts "#include \"ruby.h\""
+	  io.puts
+	  io.puts @src.join("\n\n")
+	  io.puts
+	  io.puts
+	  io.puts "  VALUE c#{@mod_name};"
+	  io.puts "#ifdef __cplusplus"
+	  io.puts "extern \"C\" {"
+	  io.puts "#endif"
+	  io.puts "  void Init_#{@mod_name}() {"
+	  io.puts "    c#{@mod_name} = rb_define_module(\"#{@mod_name}\");"
 	  @sig.keys.sort.each do |name|
 	    arity = @sig[name]
-	    src << %Q{    rb_define_method(c#{mod_name}, "#{name}", (VALUE(*)(ANYARGS))#{name}, #{arity});\n}
+	    io.print "   rb_define_method(c#{@mod_name}, \"#{name}\", "
+	    io.puts  "(VALUE(*)(ANYARGS))#{name}, #{arity});"
 	  end
-	  src << "\n  \}\n#ifdef __cplusplus\n\}\n#endif\n"
+	  io.puts
+	  io.puts "  }"
+	  io.puts "#ifdef __cplusplus"
+	  io.puts "}"
+	  io.puts "#endif"
+	  io.puts
 	end
 
 	# recompile only if the files are different
@@ -237,7 +260,7 @@ module Inline
 	  # Updates the timestamps on all the generated/compiled files.
 	  # Prevents us from entering this conditional unless the source
 	  # file changes again.
-	  File.utime(Time.now, Time.now, src_name, old_src_name, so_name)
+	  File.utime(Time.now, Time.now, src_name, old_src_name, @so_name)
 	end
 
 	if recompile then
@@ -259,93 +282,80 @@ module Inline
 	  libs  = @libs.join(' ')
 	  libs += " #{$INLINE_LIBS}" if defined? $INLINE_LIBS	# DEPRECATE
 
-	  cmd = "#{Config::CONFIG['LDSHARED']} #{flags} #{Config::CONFIG['CFLAGS']} -I #{hdrdir} -o #{so_name} #{src_name} #{libs}"
+	  cmd = "#{Config::CONFIG['LDSHARED']} #{flags} #{Config::CONFIG['CFLAGS']} -I #{hdrdir} -o #{@so_name} #{src_name} #{libs}"
 	  
 	  if /mswin32/ =~ RUBY_PLATFORM then
-	    cmd += " -link /INCREMENTAL:no /EXPORT:Init_#{mod_name}"
+	    cmd += " -link /INCREMENTAL:no /EXPORT:Init_#{@mod_name}"
 	  end
 	  
-	  $stderr.puts "Building #{so_name} with '#{cmd}'" if $DEBUG
+	  $stderr.puts "Building #{@so_name} with '#{cmd}'" if $DEBUG
 	  `#{cmd}`
 	  raise "error executing #{cmd}: #{$?}" if $? != 0
 	  $stderr.puts "Built successfully" if $DEBUG
 	end
 
       else
-	$stderr.puts "#{so_name} is up to date" if $DEBUG
+	$stderr.puts "#{@so_name} is up to date" if $DEBUG
       end # unless (file is out of date)
     end # def build
       
-    attr_accessor :mod, :src, :sig, :flags, :libs if $TESTING
-
-    public
-
-    ##
-    # 
-    #
-    
     def initialize(mod)
       @mod = mod
+      @mod_name = "Mod_#{@mod}"
+      @so_name = "#{Inline.directory}/#{@mod_name}.#{Config::CONFIG["DLEXT"]}"
       @src = []
       @sig = {}
       @flags = []
       @libs = []
     end
 
-    ##
-    # Adds compiler options to the compiler command line. 
-    # No preprocessing is done, so you must have all your dashes and everything.
-    #
+    # Adds compiler options to the compiler command line.  No
+    # preprocessing is done, so you must have all your dashes and
+    # everything.
     
     def add_compile_flags(*flags)
       @flags.push(*flags)
     end
 
-    ##
-    # Adds linker flags to the link command line.
-    # No preprocessing is done, so you must have all your dashes and everything.
-    #
+    # Adds linker flags to the link command line.  No preprocessing is
+    # done, so you must have all your dashes and everything.
     
     def add_link_flags(*flags)
       @libs.push(*flags)
     end
 
-    ##
-    # Registers C type-casts <tt>r2c</tt> and <tt>c2r</tt> for <tt>type</tt>.
-    #
+    # Registers C type-casts <tt>r2c</tt> and <tt>c2r</tt> for
+    # <tt>type</tt>.
     
     def add_type_converter(type, r2c, c2r)
       $stderr.puts "WARNING: overridding #{type}" if @@type_map.has_key? type
       @@type_map[type] = [r2c, c2r]
     end
 
-    ##
-    # DOC
-    #
+    # Adds an include to the top of the file. Don't forget to use
+    # quotes or angle brackets.
     
     def include(header)
       @src << "#include #{header}"
     end
 
-    ##
-    # DOC
-    #
+    # Adds any amount of text/code to the source
     
     def prefix(code)
       @src << code
     end
 
-    ##
-    # DOC
-    #
+    # Adds a C function to the source, including performing automatic
+    # type conversion to arguments and the return value. Unknown type
+    # conversions can be extended by using +add_type_converter+.
     
     def c src
       self.generate(src)
     end
     
-    ##
-    # DOC
-    #
+    # Adds a raw C function to the source. This version does not
+    # perform any type conversion and must conform to the ruby/C
+    # coding conventions.
     
     def c_raw src
       self.generate(src, false)
@@ -354,15 +364,11 @@ module Inline
   end # class Inline::C
 end # module Inline
 
-##
-# DOC
-#
-  
 class Module
 
-  ##
-  # DOC
-  #
+  # Extends the Module class to have an inline method. The default
+  # language/builder used is C, but can be specified with the +lang+
+  # parameter.
   
   def inline(lang = :C, testing=false)
     require "inline/#{lang}" unless lang == :C
@@ -377,48 +383,39 @@ class Module
   end
 end
 
-##
-# DOC
-#
-  
 class File
 
-  ##
-  # DOC
-  #
+  # Equivalent to <tt>File::open</tt> with an associated block, but moves
+  # any existing file with the same name to the side first.
   
   def self.write_with_backup(path) # returns true if file already existed
     
-    # if yield throws an exception, we skip the rename & writes
-    data = []; yield(data); text = data.join('')
-
     # move previous version to the side if it exists
     renamed = false
     if test ?f, path then
       renamed = true
       File.rename path, path + ".old"
     end
-    f = File.new(path, "w")
-    f.puts text
-    f.close
+
+    File.open(path, "w") do |io|
+      yield(io)
+    end
 
     return renamed
   end
-end
 
-##
-# DOC
-#
-  
+end # class File
+
 class Dir
 
-  ##
-  # DOC
-  #
+  # +assert_secure+ checks to see that +path+ exists and has minimally
+  # writable permissions. If not, it prints an error and exits. It
+  # only works on +POSIX+ systems. Patches for other systems are
+  # welcome.
   
   def self.assert_secure(path)
     mode = File.stat(path).mode
-    unless ((mode % 01000) & 0022) == 0 then # WARN: POSIX systems only...
+    unless ((mode % 01000) & 0022) == 0 then
       if $TESTING then
 	raise 'InsecureDir'
       else

@@ -34,4 +34,4 @@ install:
 	echo Installed
 
 clean:
-	rm -rf *~ ~/.ruby_inline
+	rm -rf *~ doc ~/.ruby_inline

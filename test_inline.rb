@@ -6,6 +6,7 @@ require 'inline'
 require 'test/unit'
 
 File.umask(0)
+
 #class TestFile < Test::Unit::TestCase
 # TODO def test_write_with_backup
 #end
@@ -87,17 +88,17 @@ class TestC < Test::Unit::TestCase
     x = Inline::C.new(self.class)
     assert_equal TestInline::TestC, x.mod
     assert_equal [], x.src
-    assert_equal Hash.new, x.sig # HACK : {} should be allowed
+    assert_equal({}, x.sig)
     assert_equal [], x.flags
     assert_equal [], x.libs
   end
 
   def test_ruby2c
     x = Inline::C.new(nil)
-    assert_equal 'NUM2CHR', x.ruby2c("char")
+    assert_equal 'NUM2CHR',  x.ruby2c("char")
     assert_equal 'STR2CSTR', x.ruby2c("char *")
-    assert_equal 'FIX2INT', x.ruby2c("int")
-    assert_equal 'NUM2INT', x.ruby2c("long")
+    assert_equal 'FIX2INT',  x.ruby2c("int")
+    assert_equal 'NUM2INT',  x.ruby2c("long")
     assert_equal 'NUM2UINT', x.ruby2c("unsigned int")
     assert_equal 'NUM2UINT', x.ruby2c("unsigned long")
     assert_equal 'NUM2UINT', x.ruby2c("unsigned")
@@ -109,13 +110,13 @@ class TestC < Test::Unit::TestCase
 
   def test_c2ruby
     x = Inline::C.new(nil)
-    assert_equal 'CHR2FIX', x.c2ruby("char")
+    assert_equal 'CHR2FIX',     x.c2ruby("char")
     assert_equal 'rb_str_new2', x.c2ruby("char *")
-    assert_equal 'INT2FIX', x.c2ruby("int")
-    assert_equal 'INT2NUM', x.c2ruby("long")
-    assert_equal 'UINT2NUM', x.c2ruby("unsigned int")
-    assert_equal 'UINT2NUM', x.c2ruby("unsigned long")
-    assert_equal 'UINT2NUM', x.c2ruby("unsigned")
+    assert_equal 'INT2FIX',     x.c2ruby("int")
+    assert_equal 'INT2NUM',     x.c2ruby("long")
+    assert_equal 'UINT2NUM',    x.c2ruby("unsigned int")
+    assert_equal 'UINT2NUM',    x.c2ruby("unsigned long")
+    assert_equal 'UINT2NUM',    x.c2ruby("unsigned")
 
     assert_raises RuntimeError do
       x.c2ruby('blah')
@@ -341,7 +342,7 @@ return INT2FIX(42)}"
     expected = "static VALUE add(VALUE self, VALUE _x, VALUE _y) {
   int x = FIX2INT(_x);
   int y = FIX2INT(_y);
-       return INT2FIX(x+y);
+      return INT2FIX(x+y);
     }
     "
 
@@ -362,7 +363,7 @@ add(int x, int y) { // add two numbers
 static VALUE add(VALUE self, VALUE _x, VALUE _y) {
   int x = FIX2INT(_x);
   int y = FIX2INT(_y);
-   return INT2FIX(x+y);
+  return INT2FIX(x+y);
 }
 "
     util_generate(src, expected)
@@ -381,7 +382,7 @@ add(int x, int y) { // add two numbers
 static VALUE add(VALUE self, VALUE _x, VALUE _y) {
   int x = FIX2INT(_x);
   int y = FIX2INT(_y);
-   return INT2FIX(x+y);
+  return INT2FIX(x+y);
 }
 "
     util_generate(src, expected)
