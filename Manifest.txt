@@ -4,6 +4,7 @@ Manifest.txt
 README.txt
 example.rb
 example2.rb
+inline.gemspec
 inline.rb
 inline-compat.rb
 test_inline.rb

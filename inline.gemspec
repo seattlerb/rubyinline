@@ -10,9 +10,6 @@ spec = Gem::Specification.new do |s|
   s.summary = "Multi-language extension coding within ruby."
 
   paragraphs = File.read("README.txt").split(/\n\n+/)
-  puts paragraphs[3]
-
-  # TOOD: make this auto-extract from README.txt
   s.description = paragraphs[3]
 
   s.requirements << "A POSIX environment and a compiler for your language."
