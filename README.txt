@@ -20,7 +20,6 @@ FEATURES/PROBLEMS:
 + Pretends to be secure.
 + Only uses standard ruby libraries, nothing extra to download.
 + Simple as it can be. Less than 230 lines long... um... sorta simple.
-- Currently doesn't munge ruby names that aren't compatible in C (ex: a!())
 
 SYNOPSYS:
 
@@ -51,6 +50,15 @@ SYNOPSYS:
   Type = Inline C , Iter = 1000000, T = 7.59543300 sec, 0.00000760 sec / iter
   Type = InlineRaw, Iter = 1000000, T = 7.54097200 sec, 0.00000754 sec / iter
   Type = Alias    , Iter = 1000000, T = 7.53654000 sec, 0.00000754 sec / iter
+
+PROFILING STRATEGY:
+
+0) Always keep a log of your progress and changes.
+1) Run code with 'time' and large dataset.
+2) Run code with '-rprofile' and smaller dataset, large enough to get good #s.
+3) Examine profile output and translate 1 bottleneck to C.
+4) Run new code with 'time' and large dataset. Repeat 2-3 if unsatisfied.
+5) Run final code with 'time' and compare to the first run.
 
 REQUIREMENTS:
 

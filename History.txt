@@ -1,10 +1,13 @@
 ###############################################################################
-2002-12-30 2.1.2				   00 major / 00 minor / 01 bug
+2003-01-25 2.2.0				   00 major / 01 minor / 01 bug
 
 	+ Touch all generated files to avoid unnecessary diffs.
+	- Added good profiling example in tutorial/*.
+	- Added profiling strategy in README.txt.
+	Paired with Doug Beaver <snarly@beaver.net>
 
 ###############################################################################
-2002-12-17 2.1.1				   00 major / 00 minor / 02 bug
+2002-12-27 2.1.1				   00 major / 00 minor / 02 bug
 
 	- Fixed a bug in inline.rb where it was comparing against
 	  inline.rb, not the caller.
