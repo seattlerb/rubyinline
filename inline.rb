@@ -304,9 +304,12 @@ module Inline
 
 	  cmd = "#{Config::CONFIG['LDSHARED']} #{flags} #{Config::CONFIG['CFLAGS']} -I #{hdrdir} -o #{@so_name} #{src_name} #{libs}"
 	  
-	  if /mswin32/ =~ RUBY_PLATFORM then
+          case RUBY_PLATFORM
+          when /mswin32/ then
 	    cmd += " -link /INCREMENTAL:no /EXPORT:Init_#{@mod_name}"
-	  end
+          when /i386-cygwin/ then
+            cmd += ' -L/usr/local/lib -lruby.dll'
+          end
 
           cmd += " 2> /dev/null" if $TESTING
 	  
