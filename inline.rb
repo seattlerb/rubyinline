@@ -89,6 +89,7 @@ module Inline
     @@type_map = {
       'char'          => [ 'NUM2CHR',  'CHR2FIX' ],
       'char *'        => [ 'STR2CSTR', 'rb_str_new2' ],
+      'double'        => [ 'NUM2DBL',  'rb_float_new' ],
       'int'           => [ 'FIX2INT',  'INT2FIX' ],
       'long'          => [ 'NUM2INT',  'INT2NUM' ],
       'unsigned int'  => [ 'NUM2UINT', 'UINT2NUM' ],
