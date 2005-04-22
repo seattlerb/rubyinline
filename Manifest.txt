@@ -6,7 +6,7 @@ example.rb
 example2.rb
 inline.gemspec
 inline.rb
-inline-compat.rb
+inline_package
 test_inline.rb
 tutorial/example1.rb
 tutorial/example2.rb

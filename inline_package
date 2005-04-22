@@ -4,6 +4,8 @@ require 'rbconfig'
 require 'fileutils'
 require 'inline'
 
+$TESTING ||= false
+
 class Packager
 
     RAKEFILE_TEMPLATE = <<'EOF'
@@ -54,37 +56,42 @@ EOF
   end
 
   def copy_libs
-    FileUtils.mkdir_p arch_dir
-    FileUtils.cp built_libs, arch_dir
+    FileUtils.mkdir_p inline_dir
+    FileUtils.cp built_libs, inline_dir
     @libs_copied = true
   end
 
   def generate_rakefile
     if File.exists? 'Rakefile' then
-      STDERR.puts "Hrm, you already have a Rakefile, so I didn't touch it."
-      STDERR.puts "You will have to add the following files to your gemspec's files list:"
-      STDERR.puts "\t#{gem_libs.join "\n\t"}"
+      unless $TESTING then
+        STDERR.puts "Hrm, you already have a Rakefile, so I didn't touch it."
+        STDERR.puts "You might have to add the following files to your gemspec's files list:"
+        STDERR.puts "\t#{gem_libs.join "\n\t"}"
+      end
       return
     end
 
     rakefile = eval RAKEFILE_TEMPLATE 
 
-    STDERR.puts "==> Generating Rakefile"
+    STDERR.puts "==> Generating Rakefile" unless $TESTING
     File.open 'Rakefile', 'w' do |fp|
       fp.puts rakefile
     end
   end
 
   def build_gem
-    STDERR.puts "==> Running rake"
-    system 'rake package'
+    STDERR.puts "==> Running rake" unless $TESTING
 
-    STDERR.puts
-    STDERR.puts "Ok, you now have a gem in ./pkg, enjoy!"
+    cmd = "rake package"
+    cmd += "> /dev/null 2> /dev/null" if $TESTING
+    system cmd
+
+    STDERR.puts unless $TESTING
+    STDERR.puts "Ok, you now have a gem in ./pkg, enjoy!" unless $TESTING
   end
 
-  def arch_dir
-    @arch_dir ||= File.join "lib", "inline" # TODO put libs in platform dir
+  def inline_dir
+    @inline_dir ||= File.join "lib", "inline" # TODO put libs in platform dir
   end
 
   def built_libs
@@ -93,7 +100,14 @@ EOF
 
   def gem_libs
     copy_libs unless @libs_copied
-    @gem_libs ||= Dir.glob File.join(arch_dir, "*.#{Config::CONFIG['DLEXT']}")
+    unless defined? @gem_libs then
+      @gem_libs = Dir.glob File.join(inline_dir, "*.#{Config::CONFIG['DLEXT']}")
+      files = Dir.glob(File.join('lib', '*')).select { |f| test ?f, f }
+      
+      @gem_libs.push(*files)
+      @gem_libs.sort!
+    end
+    @gem_libs
   end
 
 end

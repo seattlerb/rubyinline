@@ -1,6 +1,13 @@
+*** 3.3.0 / 2005-04-22
+
++ 2 minor enhancement
+	+ Added inline_package, which helps you package inlined code into gems.
+	+ inline_package also generates a Rakefile for you if you need it.
+	+ inline.rb now (only) loads packaged code when present.
+
 *** 3.2.1 / 2005-04-19
 
-+ 2 minor enhancements
++ 2 bug fixes
 	+ Added double to typemap. Thanks Phil Tomson!
 	+ Added a minor hack to get cygwin to work right--lemme know pls.
 

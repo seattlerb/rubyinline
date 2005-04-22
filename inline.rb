@@ -1,7 +1,8 @@
 #!/usr/local/bin/ruby -w
 
+##
 # Ruby Inline is a framework for writing ruby extensions in foreign
-# languages
+# languages.
 #
 # = SYNOPSIS
 #
@@ -26,6 +27,10 @@
 # builds it only when necessary. The extensions are then automatically
 # loaded into the class/module that defines it.
 #
+# Using the package_inline tool Inline now allows you to package up
+# your inlined object code for distribution to systems without a
+# compiler (read: windows)!
+#
 # You can even write extra builders that will allow you to write
 # inlined code in any language. Use Inline::C as a template and look
 # at Module#inline for the required API.
@@ -38,13 +43,14 @@ $TESTING = false unless defined? $TESTING
 
 class CompilationError < RuntimeError; end
 
+##
 # The Inline module is the top-level module used. It is responsible
 # for instantiating the builder for the right language used,
 # compilation/linking when needed, and loading the inlined code into
 # the current namespace.
 
 module Inline
-  VERSION = '3.2.1'
+  VERSION = '3.3.0'
 
   $stderr.puts "RubyInline v #{VERSION}" if $DEBUG
 
@@ -226,6 +232,19 @@ module Inline
     attr_accessor :mod, :src, :sig, :flags, :libs if $TESTING
 
     public
+
+    def load_cache
+      begin
+        file = File.join("inline", File.basename(@so_name))
+        if require file then
+          dir = Inline.directory
+          warn "WARNING: #{dir} exists but is not being used" if test ?d, dir
+          return true
+        end
+      rescue LoadError
+      end
+      return false
+    end
 
     def load
       require "#{@so_name}" or raise LoadError, "require on #{@so_name} failed"
@@ -432,8 +451,10 @@ class Module
     yield builder
 
     unless testing then
-      builder.build
-      builder.load
+      unless builder.load_cache then
+        builder.build
+        builder.load
+      end
     end
   end
 end

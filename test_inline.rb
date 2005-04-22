@@ -476,8 +476,6 @@ puts(s); return rb_str_new2(s)}"
     begin
       Kernel.module_eval { require rb_file }
       yield if block_given?
-    rescue Exception => err
-      raise err
     ensure
       File.unlink rb_file
     end
@@ -673,8 +671,8 @@ class TestPackager < Test::Unit::TestCase
     assert_equal true, system("gem check #{package_name}")
   end
 
-  def test_arch_dir
-    assert_equal "lib/inline", @packager.arch_dir
+  def test_inline_dir
+    assert_equal "lib/inline", @packager.inline_dir
   end
   
   def test_built_libs
@@ -684,17 +682,17 @@ class TestPackager < Test::Unit::TestCase
     Dir.mkdir dir, 0700
     Dir.chdir dir
 
-    FileUtils.touch(*expected)
+    FileUtils.touch(expected)
 
     assert_equal expected.map { |f| "#{dir}/#{f}"}, @packager.built_libs
   end
 
   def test_gem_libs
     @packager.instance_variable_set "@libs_copied", true
-    expected = ["lib/inline/Inline_Test.#{@ext}"]
+    expected = ["lib/blah.rb", "lib/inline/Inline_Test.#{@ext}"]
 
     FileUtils.mkdir_p "lib/inline"
-    FileUtils.touch(*expected)
+    FileUtils.touch(expected)
 
     assert_equal expected, @packager.gem_libs
   end
