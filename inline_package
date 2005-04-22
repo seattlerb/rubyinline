@@ -1,0 +1,114 @@
+#!/usr/local/bin/ruby -w
+
+require 'rbconfig'
+require 'fileutils'
+require 'inline'
+
+class Packager
+
+    RAKEFILE_TEMPLATE = <<'EOF'
+%[require 'rake'
+require 'rake/gempackagetask'
+
+summary = #{summary.inspect}
+
+if summary.empty? then
+  STDERR.puts "*************************************"
+  STDERR.puts "*** Summary not filled in, SHAME! ***"
+  STDERR.puts "*************************************"
+end
+
+spec = Gem::Specification.new do |s|
+  s.name = #{name.inspect}
+  s.version = #{version.inspect}
+  s.summary = summary
+
+  s.has_rdoc = false
+  s.files = #{gem_libs.inspect}
+  s.add_dependency 'RubyInline', '>= 3.3.0'
+  s.require_path = 'lib'
+end
+
+desc "Builds a gem with #{name} in it"
+Rake::GemPackageTask.new spec do |pkg|
+  pkg.need_zip = false
+  pkg.need_tar = false
+end
+]
+EOF
+
+  attr_accessor :name, :version, :summary
+
+  def initialize(name, version, summary = '')
+    @name = name
+    @version = version
+    @summary = summary
+
+    @libs_copied = false
+  end
+
+  def package
+    copy_libs
+    generate_rakefile
+    build_gem
+  end
+
+  def copy_libs
+    FileUtils.mkdir_p arch_dir
+    FileUtils.cp built_libs, arch_dir
+    @libs_copied = true
+  end
+
+  def generate_rakefile
+    if File.exists? 'Rakefile' then
+      STDERR.puts "Hrm, you already have a Rakefile, so I didn't touch it."
+      STDERR.puts "You will have to add the following files to your gemspec's files list:"
+      STDERR.puts "\t#{gem_libs.join "\n\t"}"
+      return
+    end
+
+    rakefile = eval RAKEFILE_TEMPLATE 
+
+    STDERR.puts "==> Generating Rakefile"
+    File.open 'Rakefile', 'w' do |fp|
+      fp.puts rakefile
+    end
+  end
+
+  def build_gem
+    STDERR.puts "==> Running rake"
+    system 'rake package'
+
+    STDERR.puts
+    STDERR.puts "Ok, you now have a gem in ./pkg, enjoy!"
+  end
+
+  def arch_dir
+    @arch_dir ||= File.join "lib", "inline" # TODO put libs in platform dir
+  end
+
+  def built_libs
+    Dir.glob File.join(Inline.directory, "*.#{Config::CONFIG['DLEXT']}")
+  end
+
+  def gem_libs
+    copy_libs unless @libs_copied
+    @gem_libs ||= Dir.glob File.join(arch_dir, "*.#{Config::CONFIG['DLEXT']}")
+  end
+
+end
+
+if __FILE__ == $0 then
+  name = ARGV.shift
+  version = ARGV.shift
+  summary = ARGV.shift || ""
+
+  if version.nil? then # TODO better usage
+    STDERR.puts "Usage: packager NAME VERSION SUMMARY"
+    exit 1
+  end
+
+  packager = Packager.new name, version, summary
+  packager.package
+end
+

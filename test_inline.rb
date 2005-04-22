@@ -3,6 +3,7 @@
 $TESTING = true
 
 require 'inline'
+load 'inline_package'
 require 'tempfile'
 require 'test/unit'
 
@@ -584,3 +585,119 @@ class TestModule < Test::Unit::TestCase
   end
 
 end
+
+class TestPackager < Test::Unit::TestCase
+
+  def setup
+    @name = "Packager Test"
+    @version = "1.0.0"
+    @summary = "This is a Packager test gem"
+    @packager = Packager.new @name, @version, @summary
+
+    @inline_dir = "/tmp/#{$$}_inline"
+    @package_dir = "/tmp/#{$$}_package"
+
+    ENV['INLINEDIR'] = @inline_dir
+
+    Dir.mkdir @inline_dir, 0700
+    Dir.mkdir @package_dir, 0700
+    @orig_dir = Dir.pwd
+    Dir.chdir @package_dir
+
+    @ext = Config::CONFIG['DLEXT']
+  end
+
+  def teardown
+    Dir.chdir @orig_dir
+    return if $DEBUG
+    `rm -rf #{@inline_dir}`
+    `rm -rf #{@package_dir}`
+  end
+
+  def util_generate_rakefile
+    summary = @summary
+    name = @name
+    version = @version
+    gem_libs = []
+
+    eval Packager::RAKEFILE_TEMPLATE
+  end
+
+  def test_package
+    assert_nothing_raised do
+      @packager.package
+    end
+  end
+  
+  def test_copy_libs
+    assert_equal false, @packager.instance_variable_get("@libs_copied")
+
+    built_lib = "Inline_Test.#{@ext}"
+    dir = "#{@inline_dir}/.ruby_inline"
+
+    Dir.mkdir dir, 0700
+    Dir.chdir dir do
+      FileUtils.touch built_lib
+    end
+
+    @packager.copy_libs
+
+    assert_equal true, File.directory?("#{@package_dir}/lib/inline")
+    assert_equal true, File.exists?("#{@package_dir}/lib/inline/#{built_lib}")
+
+    assert_equal true, @packager.instance_variable_get("@libs_copied")
+  end
+
+  def test_generate_rakefile_has_rakefile
+    FileUtils.touch 'Rakefile'
+    
+    @packager.generate_rakefile
+
+    assert_equal "", File.read('Rakefile')
+  end
+
+  def test_generate_rakefile_no_rakefile
+    @packager.generate_rakefile
+
+    assert_equal util_generate_rakefile, File.read('Rakefile')
+  end
+
+  def test_build_gem
+    File.open 'Rakefile', 'w' do |fp|
+      fp.puts util_generate_rakefile
+    end
+
+    @packager.build_gem
+    package_name = "pkg/#{@name}-#{@version}.gem"
+    assert_equal true, File.exists?(package_name)
+    assert_equal true, system("gem check #{package_name}")
+  end
+
+  def test_arch_dir
+    assert_equal "lib/inline", @packager.arch_dir
+  end
+  
+  def test_built_libs
+    expected = ["Inline_Test.#{@ext}"]
+
+    dir = "#{@inline_dir}/.ruby_inline"
+    Dir.mkdir dir, 0700
+    Dir.chdir dir
+
+    FileUtils.touch(*expected)
+
+    assert_equal expected.map { |f| "#{dir}/#{f}"}, @packager.built_libs
+  end
+
+  def test_gem_libs
+    @packager.instance_variable_set "@libs_copied", true
+    expected = ["lib/inline/Inline_Test.#{@ext}"]
+
+    FileUtils.mkdir_p "lib/inline"
+    FileUtils.touch(*expected)
+
+    assert_equal expected, @packager.gem_libs
+  end
+
+end
+
