@@ -11,6 +11,10 @@ directly. By writing simple builder classes, you can teach how to cope
 with new languages (fortran, perl, whatever). The code is compiled and
 run on the fly when needed.
 
+Using the package_inline tool Inline now allows you to package up
+your inlined object code for distribution to systems without a
+compiler (read: windows)!
+
 ** FEATURES/PROBLEMS:
 
 + Quick and easy inlining of your C or C++ code embedded in your ruby script.
@@ -20,7 +24,8 @@ run on the fly when needed.
 + inline_c_raw exists for when the automatic conversion isn't sufficient.
 + Only recompiles if the inlined code has changed.
 + Pretends to be secure.
-+ Only uses standard ruby libraries, nothing extra to download.
++ Only requires standard ruby libraries, nothing extra to download.
++ Can generate a basic Rakefile and package up built extensions for distribution.
 
 ** SYNOPSYS:
 
@@ -55,6 +60,13 @@ run on the fly when needed.
   t = MyTest.new()
   t.hello(3)
 
+** SYNOPSYS (packaging):
+
+  rm -rf ~/.ruby_inline
+  make test
+  inline_package packagename 1.0.0
+  ls lib/inline
+
 ** (PSEUDO)BENCHMARKS:
 
   > make bench
@@ -86,7 +98,7 @@ run on the fly when needed.
 + POSIX compliant system (ie pretty much any UNIX, or Cygwin on MS platforms).
 + A C/C++ compiler (the same one that compiled your ruby interpreter).
 + test::unit for running tests ( http://testunit.talbott.ws/ ).
-+ rubygems if you'd like.
++ rubygems & rake if you'd like - these are used by inline_package.
 
 ** INSTALL:
 
@@ -97,7 +109,7 @@ run on the fly when needed.
 
 (The MIT License)
 
-Copyright (c) 2001-2002 Ryan Davis, Zen Spider Software
+Copyright (c) 2001-2005 Ryan Davis, Zen Spider Software
 
 Permission is hereby granted, free of charge, to any person obtaining
 a copy of this software and associated documentation files (the

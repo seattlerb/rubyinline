@@ -16,6 +16,10 @@ spec = Gem::Specification.new do |s|
   s.requirements << "A POSIX environment and a compiler for your language."
   s.files = IO.readlines("Manifest.txt").map {|f| f.chomp }
 
+  s.bindir = "."
+  s.executables = ['inline_package']
+  puts "Executables = #{s.executables.join(", ")}"
+
   s.require_path = '.' 
   s.autorequire = 'inline'
 
