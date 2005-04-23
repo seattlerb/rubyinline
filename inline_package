@@ -6,6 +6,7 @@ require 'inline'
 
 $TESTING ||= false
 
+module Inline
 class Packager
 
     RAKEFILE_TEMPLATE = <<'EOF'
@@ -111,6 +112,7 @@ EOF
   end
 
 end
+end
 
 if __FILE__ == $0 then
   name = ARGV.shift
@@ -122,7 +124,7 @@ if __FILE__ == $0 then
     exit 1
   end
 
-  packager = Packager.new name, version, summary
+  packager = Inline::Packager.new name, version, summary
   packager.package
 end
 

@@ -9,20 +9,35 @@ require 'test/unit'
 
 File.umask(0)
 
-class TestDir < Test::Unit::TestCase
+class InlineTestCase < Test::Unit::TestCase
 
   def setup
-    @dir = "/tmp/#{$$}"
-    @count = 1
-    Dir.mkdir @dir, 0700
+    super
+    @rootdir = "/tmp/#{$$}"
+    Dir.mkdir @rootdir, 0700
+    ENV['INLINEDIR'] = @rootdir
   end
 
   def teardown
-    `rm -rf #{@dir}` unless $DEBUG
+    FileUtils.rm_rf @rootdir unless $DEBUG
+    ENV.delete 'INLINEDIR'
+  end
+
+  def test_stupid
+    #shuts test unit up
+  end
+
+end
+
+class TestDir < InlineTestCase
+
+  def setup
+    super
+    @count = 1
   end
 
   def util_assert_secure(perms, should_pass)
-    path = File.join(@dir, @count.to_s)
+    path = File.join(@rootdir, @count.to_s)
     @count += 1
     Dir.mkdir path, perms unless perms.nil?
     if should_pass then
@@ -48,17 +63,7 @@ class TestDir < Test::Unit::TestCase
   end
 end
 
-class TestInline < Test::Unit::TestCase
-
-  def setup
-    @rootdir = "/tmp/#{$$}"
-    Dir.mkdir @rootdir, 0700
-    ENV['INLINEDIR'] = @rootdir
-  end
-
-  def teardown
-    `rm -rf #{@rootdir}` unless $DEBUG
-  end
+class TestInline < InlineTestCase
 
   def test_rootdir
     assert_equal(@rootdir, Inline.rootdir)
@@ -72,7 +77,7 @@ class TestInline < Test::Unit::TestCase
 end
 
 class TestInline
-class TestC < Test::Unit::TestCase
+class TestC < InlineTestCase
 
   # quick hack to make tests more readable,
   # does nothing I wouldn't otherwise do...
@@ -540,16 +545,7 @@ module Foo
 end
 EOR
 
-class TestModule < Test::Unit::TestCase
-
-  def setup
-    @rootdir = "/tmp/#{$$}"
-    ENV['INLINEDIR'] = @rootdir
-  end
-
-  def teardown
-    `rm -rf #{@rootdir}` unless $DEBUG
-  end
+class TestModule < InlineTestCase
 
   def test_nested
     Object.class_eval $test_module_code
@@ -584,21 +580,17 @@ class TestModule < Test::Unit::TestCase
 
 end
 
-class TestPackager < Test::Unit::TestCase
+class TestInlinePackager < InlineTestCase
 
   def setup
+    super
     @name = "Packager Test"
     @version = "1.0.0"
     @summary = "This is a Packager test gem"
-    @packager = Packager.new @name, @version, @summary
+    @packager = Inline::Packager.new @name, @version, @summary
 
-    @inline_dir = "/tmp/#{$$}_inline"
-    @package_dir = "/tmp/#{$$}_package"
-
-    ENV['INLINEDIR'] = @inline_dir
-
-    Dir.mkdir @inline_dir, 0700
-    Dir.mkdir @package_dir, 0700
+    @package_dir = @rootdir + "_package"
+    Dir.mkdir @package_dir, 0700 # unless test ?d, @package_dir
     @orig_dir = Dir.pwd
     Dir.chdir @package_dir
 
@@ -606,10 +598,9 @@ class TestPackager < Test::Unit::TestCase
   end
 
   def teardown
+    super
     Dir.chdir @orig_dir
-    return if $DEBUG
-    `rm -rf #{@inline_dir}`
-    `rm -rf #{@package_dir}`
+    FileUtils.rm_rf @package_dir unless $DEBUG
   end
 
   def util_generate_rakefile
@@ -618,7 +609,7 @@ class TestPackager < Test::Unit::TestCase
     version = @version
     gem_libs = []
 
-    eval Packager::RAKEFILE_TEMPLATE
+    eval Inline::Packager::RAKEFILE_TEMPLATE
   end
 
   def test_package
@@ -631,7 +622,7 @@ class TestPackager < Test::Unit::TestCase
     assert_equal false, @packager.instance_variable_get("@libs_copied")
 
     built_lib = "Inline_Test.#{@ext}"
-    dir = "#{@inline_dir}/.ruby_inline"
+    dir = "#{@rootdir}/.ruby_inline"
 
     Dir.mkdir dir, 0700
     Dir.chdir dir do
@@ -678,7 +669,7 @@ class TestPackager < Test::Unit::TestCase
   def test_built_libs
     expected = ["Inline_Test.#{@ext}"]
 
-    dir = "#{@inline_dir}/.ruby_inline"
+    dir = "#{@rootdir}/.ruby_inline"
     Dir.mkdir dir, 0700
     Dir.chdir dir
 

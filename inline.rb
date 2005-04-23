@@ -50,14 +50,15 @@ class CompilationError < RuntimeError; end
 # the current namespace.
 
 module Inline
-  VERSION = '3.3.0'
+  VERSION = '3.3.1'
 
   $stderr.puts "RubyInline v #{VERSION}" if $DEBUG
 
   protected
 
   def self.rootdir
-    unless defined? @@rootdir and test ?d, @@rootdir then
+    env = ENV['INLINEDIR'] || ENV['HOME']
+    unless defined? @@rootdir and env == @@rootdir and test ?d, @@rootdir then
       rootdir = ENV['INLINEDIR'] || ENV['HOME']
       Dir.mkdir rootdir, 0700 unless test ?d, rootdir
       Dir.assert_secure rootdir
@@ -68,8 +69,8 @@ module Inline
   end
 
   def self.directory
-    unless defined? @@directory and test ?d, @@directory then
-      directory = File.join(rootdir, ".ruby_inline")
+    directory = File.join(rootdir, ".ruby_inline")
+    unless defined? @@directory and directory == @@directory and test ?d, @@directory then
       unless File.directory? directory then
 	$stderr.puts "NOTE: creating #{directory} for RubyInline" if $DEBUG
 	Dir.mkdir directory, 0700
