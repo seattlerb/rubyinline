@@ -36,8 +36,8 @@
 # at Module#inline for the required API.
 
 require "rbconfig"
-require "ftools"
 require "digest/md5"
+require 'fileutils'
 
 $TESTING = false unless defined? $TESTING
 
@@ -430,6 +430,78 @@ module Inline
     end
 
   end # class Inline::C
+
+  class Packager
+    attr_accessor :name, :version, :summary, :libs_copied, :inline_dir
+
+    def initialize(name, version, summary = '')
+      @name = name
+      @version = version
+      @summary = summary
+      @libs_copied = false
+      @ext = Config::CONFIG['DLEXT']
+
+      # TODO (maybe) put libs in platform dir
+      @inline_dir = File.join "lib", "inline"
+    end
+
+    def package
+      copy_libs
+      generate_rakefile
+      build_gem
+    end
+
+    def copy_libs
+      unless @libs_copied then
+        FileUtils.mkdir_p @inline_dir
+        built_libs = Dir.glob File.join(Inline.directory, "*.#{@ext}")
+        FileUtils.cp built_libs, @inline_dir
+        @libs_copied = true
+      end
+    end
+
+    def generate_rakefile
+      if File.exists? 'Rakefile' then
+        unless $TESTING then
+          STDERR.puts "Hrm, you already have a Rakefile, so I didn't touch it."
+          STDERR.puts "You might have to add the following files to your gemspec's files list:"
+          STDERR.puts "\t#{gem_libs.join "\n\t"}"
+        end
+        return
+      end
+
+      rakefile = eval RAKEFILE_TEMPLATE 
+
+      STDERR.puts "==> Generating Rakefile" unless $TESTING
+      File.open 'Rakefile', 'w' do |fp|
+        fp.puts rakefile
+      end
+    end
+
+    def build_gem
+      STDERR.puts "==> Running rake" unless $TESTING
+
+      cmd = "rake package"
+      cmd += "> /dev/null 2> /dev/null" if $TESTING
+      system cmd
+
+      STDERR.puts unless $TESTING
+      STDERR.puts "Ok, you now have a gem in ./pkg, enjoy!" unless $TESTING
+    end
+
+    def gem_libs
+      unless defined? @gem_libs then
+        @gem_libs = Dir.glob File.join(@inline_dir, "*.#{@ext}")
+        files = Dir.glob(File.join('lib', '*')).select { |f| test ?f, f }
+        
+        @gem_libs.push(*files)
+        @gem_libs.sort!
+      end
+      @gem_libs
+    end
+
+    RAKEFILE_TEMPLATE = '%[require "rake"\nrequire "rake/gempackagetask"\n\nsummary = #{summary.inspect}\n\nif summary.empty? then\n  STDERR.puts "*************************************"\n  STDERR.puts "*** Summary not filled in, SHAME! ***"\n  STDERR.puts "*************************************"\nend\n\nspec = Gem::Specification.new do |s|\n  s.name = #{name.inspect}\n  s.version = #{version.inspect}\n  s.summary = summary\n\n  s.has_rdoc = false\n  s.files = #{gem_libs.inspect}\n  s.add_dependency "RubyInline", ">= 3.3.0"\n  s.require_path = "lib"\nend\n\ndesc "Builds a gem with #{name} in it"\nRake::GemPackageTask.new spec do |pkg|\n  pkg.need_zip = false\n  pkg.need_tar = false\nend\n]'
+  end # class Packager
 end # module Inline
 
 class Module
@@ -480,7 +552,6 @@ class File
 
     return renamed
   end
-
 end # class File
 
 class Dir

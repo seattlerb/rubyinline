@@ -3,7 +3,6 @@
 $TESTING = true
 
 require 'inline'
-load 'inline_package'
 require 'tempfile'
 require 'test/unit'
 
@@ -612,6 +611,11 @@ class TestInlinePackager < InlineTestCase
     eval Inline::Packager::RAKEFILE_TEMPLATE
   end
 
+  def test_initialize
+    assert_equal "lib/inline", @packager.inline_dir
+    assert_equal false, @packager.libs_copied
+  end
+
   def test_package
     assert_nothing_raised do
       @packager.package
@@ -619,7 +623,7 @@ class TestInlinePackager < InlineTestCase
   end
   
   def test_copy_libs
-    assert_equal false, @packager.instance_variable_get("@libs_copied")
+    assert_equal false, @packager.libs_copied
 
     built_lib = "Inline_Test.#{@ext}"
     dir = "#{@rootdir}/.ruby_inline"
@@ -634,7 +638,7 @@ class TestInlinePackager < InlineTestCase
     assert_equal true, File.directory?("#{@package_dir}/lib/inline")
     assert_equal true, File.exists?("#{@package_dir}/lib/inline/#{built_lib}")
 
-    assert_equal true, @packager.instance_variable_get("@libs_copied")
+    assert_equal true, @packager.libs_copied
   end
 
   def test_generate_rakefile_has_rakefile
@@ -662,24 +666,8 @@ class TestInlinePackager < InlineTestCase
     assert_equal true, system("gem check #{package_name}")
   end
 
-  def test_inline_dir
-    assert_equal "lib/inline", @packager.inline_dir
-  end
-  
-  def test_built_libs
-    expected = ["Inline_Test.#{@ext}"]
-
-    dir = "#{@rootdir}/.ruby_inline"
-    Dir.mkdir dir, 0700
-    Dir.chdir dir
-
-    FileUtils.touch(expected)
-
-    assert_equal expected.map { |f| "#{dir}/#{f}"}, @packager.built_libs
-  end
-
   def test_gem_libs
-    @packager.instance_variable_set "@libs_copied", true
+    @packager.libs_copied = true
     expected = ["lib/blah.rb", "lib/inline/Inline_Test.#{@ext}"]
 
     FileUtils.mkdir_p "lib/inline"
@@ -687,6 +675,4 @@ class TestInlinePackager < InlineTestCase
 
     assert_equal expected, @packager.gem_libs
   end
-
 end
-
