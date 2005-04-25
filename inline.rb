@@ -37,6 +37,7 @@
 
 require "rbconfig"
 require "digest/md5"
+require 'ftools'
 require 'fileutils'
 
 $TESTING = false unless defined? $TESTING

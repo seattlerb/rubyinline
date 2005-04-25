@@ -1,3 +1,8 @@
+*** 3.3.1 / 2005-04-23
+
++ 1 bug fix
+	+ Moved the packaging code into inline.rb in order to get rubygems wrapped scripts to work again (wrapper was breaking due to __FILE__ != $0).
+
 *** 3.3.0 / 2005-04-22
 
 + 2 minor enhancement
