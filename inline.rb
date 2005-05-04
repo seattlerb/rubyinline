@@ -253,7 +253,10 @@ module Inline
     end
 
     def build
-      rb_file = File.expand_path(caller[1].split(/:/).first) # [MS]
+      real_caller = caller[1]
+      real_caller = caller[4] if real_caller =~ /\(eval\)/
+      real_caller = real_caller.split(/:/).first
+      @rb_file = File.expand_path(real_caller) # [MS]
       so_exists = File.file? @so_name
 
       unless so_exists and File.mtime(@rb_file) < File.mtime(@so_name)
@@ -336,7 +339,7 @@ module Inline
           cmd += " 2> /dev/null" if $TESTING
 	  
 	  $stderr.puts "Building #{@so_name} with '#{cmd}'" if $DEBUG
-	  `#{cmd}`
+          `#{cmd}`
           if $? != 0 then
             bad_src_name = src_name + ".bad"
             File.rename src_name, bad_src_name
@@ -355,7 +358,13 @@ module Inline
       @mod = mod
       if @mod then
         # Figure out which script file defined the C code
-        @rb_file = File.expand_path(caller[2].split(/:/).first) # [MS]
+
+        real_caller = caller[2]
+        real_caller = caller[5] if real_caller =~ /\(eval\)/
+        real_caller = real_caller.split(/:/).first
+
+        @rb_file = File.expand_path(real_caller) # [MS]
+
         # Extract the basename of the script and clean it up to be 
         # a valid C identifier
         rb_script_name = File.basename(@rb_file).gsub(/[^a-zA-Z0-9_]/,'_')
