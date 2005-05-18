@@ -225,7 +225,7 @@ module Inline
       delta = if result =~ /\A(static.*?\{)/m then
                 $1.split(/\n/).size
               else
-                warn "WTF? Can't find signature\n"
+                warn "WARNING: Can't find signature in #{result.inspect}\n" unless $TESTING
                 0
               end
 
