@@ -1,3 +1,11 @@
+*** 3.3.2 / 2005-05-17
+
++ 4 bug fixes
+	+ Fixed a line number issue when using c_raw w/ multi-line signatures.
+	+ Inline can now be invoked multiple times per class.
+	+ Filled out rdoc.
+	+ Fixed some old tests.
+
 *** 3.3.1 / 2005-05-03
 
 + 3 bug fixes

@@ -96,7 +96,7 @@ class TestC < InlineTestCase
   end
 
   def test_ruby2c
-    x = Inline::C.new(nil)
+    x = Inline::C.new(self.class)
     assert_equal 'NUM2CHR',  x.ruby2c("char")
     assert_equal 'STR2CSTR', x.ruby2c("char *")
     assert_equal 'FIX2INT',  x.ruby2c("int")
@@ -111,7 +111,7 @@ class TestC < InlineTestCase
   end
 
   def test_c2ruby
-    x = Inline::C.new(nil)
+    x = Inline::C.new(self.class)
     assert_equal 'CHR2FIX',     x.c2ruby("char")
     assert_equal 'rb_str_new2', x.c2ruby("char *")
     assert_equal 'INT2FIX',     x.c2ruby("int")
@@ -123,6 +123,35 @@ class TestC < InlineTestCase
     assert_raises ArgumentError do
       x.c2ruby('blah')
     end
+  end
+
+  def util_module_name(*signatures)
+    md5 = Digest::MD5.new
+    builder = Inline::C.new(self.class)
+
+    signatures.each do |signature|
+      builder.sig[signature] = [nil, 0]
+      md5 << signature.to_s
+    end
+
+    assert_equal("Inline_TestInline__TestC_#{md5.to_s[0,4]}",
+                 builder.module_name)
+  end
+
+  def test_module_name_0_methods
+    util_module_name
+  end
+
+  def test_module_name_1_method
+    util_module_name :something1
+  end
+
+  def test_module_name_2_methods
+    util_module_name :something2, :something3
+  end
+
+  def test_module_name_2_other_methods
+    util_module_name :something4, :something5
   end
 
   def util_parse_signature(src, expected, t=nil, a=nil, b=nil)
@@ -549,8 +578,8 @@ class TestModule < InlineTestCase
   def test_nested
     Object.class_eval $test_module_code
     fb = Foo::Bar.new
-    assert_equal(fb.forty_two_instance, 42)
-    assert_equal(Foo::Bar.twenty_four_class, 24)
+    assert_equal(42, fb.forty_two_instance)
+    assert_equal(24, Foo::Bar.twenty_four_class)
 
     tempfile = Tempfile.new("test_inline_nested")
     tempfile.write($test_module_code2)
@@ -558,8 +587,8 @@ class TestModule < InlineTestCase
     tempfile.rewind
     `cp #{tempfile.path} #{tempfile.path}.rb`
     require "#{tempfile.path}.rb"
-    assert_equal(fb.twelve_instance,12)
-    assert_equal(Foo::Bar.twelve_class,12)
+    assert_equal(12, fb.twelve_instance)
+    assert_equal(12, Foo::Bar.twelve_class)
     `rm "#{tempfile.path}.rb"`
   end
 
@@ -569,9 +598,8 @@ class TestModule < InlineTestCase
     end
     assert(test(?d, Inline.directory),
 	   "inline dir should have been created")
-    matches = Dir[File.join(Inline.directory, "Inline_TestModule_test_inline_rb_*.c")]
-    assert_equal(matches.length,1,
-	   "Source should have been created")
+    matches = Dir[File.join(Inline.directory, "Inline_TestModule_*.c")]
+    assert_equal(1, matches.length, "Source should have been created")
     library_file = matches.first.gsub(/\.c$/) { "." + Config::CONFIG["DLEXT"] }
     assert(test(?f, library_file),
 	   "Library file should have been created")

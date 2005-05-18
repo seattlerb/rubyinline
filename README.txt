@@ -1,6 +1,7 @@
 ** Ruby Inline
 
     http://www.zenspider.com/ZSS/Products/RubyInline/
+    http://rubyforge.org/projects/rubyinline/
     support@zenspider.com
 
 ** DESCRIPTION:

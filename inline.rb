@@ -22,7 +22,7 @@
 # 
 # = DESCRIPTION
 # 
-# Inline allows you to write C/C++ code within your ruby code. It
+# Inline allows you to write foreign code within your ruby code. It
 # automatically determines if the code in question has changed and
 # builds it only when necessary. The extensions are then automatically
 # loaded into the class/module that defines it.
@@ -51,7 +51,7 @@ class CompilationError < RuntimeError; end
 # the current namespace.
 
 module Inline
-  VERSION = '3.3.1'
+  VERSION = '3.3.2'
 
   $stderr.puts "RubyInline v #{VERSION}" if $DEBUG
 
@@ -204,7 +204,7 @@ module Inline
 	    prefix += "  #{type} #{arg} = #{ruby2c(type)}(_#{arg});\n"
 	  end
 	end
-	# replace the function signature (hopefully) with new signature (prefix)
+	# replace the function signature (hopefully) with new sig (prefix)
 	result.sub!(/[^;\/\"\>]+#{function_name}\s*\([^\{]+\{/, "\n" + prefix)
 	result.sub!(/\A\n/, '') # strip off the \n in front in case we added it
 	unless return_type == "void" then
@@ -222,8 +222,15 @@ module Inline
 	result.sub!(/\A\n/, '') # strip off the \n in front in case we added it
       end
 
+      delta = if result =~ /\A(static.*?\{)/m then
+                $1.split(/\n/).size
+              else
+                warn "WTF? Can't find signature\n"
+                0
+              end
+
       file, line = caller[1].split(/:/)
-      result = "# line #{line.to_i - 1} \"#{file}\"\n" + result
+      result = "# line #{line.to_i + delta} \"#{file}\"\n" + result unless $DEBUG
 
       @src << result
       @sig[function_name] = [arity,singleton]
@@ -231,13 +238,49 @@ module Inline
       return result if $TESTING
     end # def generate
 
+    def module_name
+      unless defined? @module_name then
+        module_name = @mod.name.gsub('::','__')
+        md5 = Digest::MD5.new
+        @sig.keys.sort_by{|x| x.to_s}.each { |m| md5 << m.to_s }
+        @module_name = "Inline_#{module_name}_#{md5.to_s[0,4]}"
+      end
+      @module_name
+    end
+
+    def so_name
+      unless defined? @so_name then
+        @so_name = "#{Inline.directory}/#{module_name}.#{Config::CONFIG["DLEXT"]}"
+      end
+      @so_name
+    end
+
+    attr_reader :rb_file, :mod
     attr_accessor :mod, :src, :sig, :flags, :libs if $TESTING
 
     public
 
+    def initialize(mod)
+      raise ArgumentError, "Class/Module arg is required" unless Module === mod
+
+      real_caller = caller[2] # new -> inline -> real_caller|eval
+      real_caller = caller[5] if real_caller =~ /\(eval\)/
+      @real_caller = real_caller.split(/:/).first
+      @rb_file = File.expand_path(@real_caller)
+
+      @mod = mod
+      @src = []
+      @sig = {}
+      @flags = []
+      @libs = []
+    end
+
+    ##
+    # Attempts to load pre-generated code returning true if it succeeds.
+
     def load_cache
       begin
-        file = File.join("inline", File.basename(@so_name))
+        file = File.join("inline", File.basename(so_name))
         if require file then
           dir = Inline.directory
           warn "WARNING: #{dir} exists but is not being used" if test ?d, dir
@@ -248,20 +291,23 @@ module Inline
       return false
     end
 
+    ##
+    # Loads the generated code back into ruby
+
     def load
-      require "#{@so_name}" or raise LoadError, "require on #{@so_name} failed"
+      require "#{so_name}" or raise LoadError, "require on #{so_name} failed"
     end
 
-    def build
-      real_caller = caller[1]
-      real_caller = caller[4] if real_caller =~ /\(eval\)/
-      real_caller = real_caller.split(/:/).first
-      @rb_file = File.expand_path(real_caller) # [MS]
-      so_exists = File.file? @so_name
+    ##
+    # Builds the source file, if needed, and attempts to compile it.
 
-      unless so_exists and File.mtime(@rb_file) < File.mtime(@so_name)
+    def build
+      so_name = self.so_name
+      so_exists = File.file? so_name
+
+      unless so_exists and File.mtime(rb_file) < File.mtime(so_name)
 	
-	src_name = "#{Inline.directory}/#{@mod_name}.c"
+	src_name = "#{Inline.directory}/#{module_name}.c"
 	old_src_name = "#{src_name}.old"
 	should_compare = File.write_with_backup(src_name) do |io|
 	  io.puts
@@ -273,8 +319,9 @@ module Inline
 	  io.puts "#ifdef __cplusplus"
 	  io.puts "extern \"C\" {"
 	  io.puts "#endif"
-	  io.puts "  void Init_#{@mod_name}() {"
+	  io.puts "  void Init_#{module_name}() {"
           io.puts "    VALUE c = rb_cObject;"
+          # TODO: use rb_class2path
           @mod.name.split("::").each do |n|
             io.puts "    c = rb_const_get_at(c,rb_intern(\"#{n}\"));"
           end
@@ -305,7 +352,7 @@ module Inline
 	  # Prevents us from entering this conditional unless the source
 	  # file changes again.
           t = Time.now
-	  File.utime(t, t, src_name, old_src_name, @so_name)
+	  File.utime(t, t, src_name, old_src_name, so_name)
 	end
 
 	if recompile then
@@ -327,18 +374,18 @@ module Inline
 	  libs  = @libs.join(' ')
 	  libs += " #{$INLINE_LIBS}" if defined? $INLINE_LIBS	# DEPRECATE
 
-	  cmd = "#{Config::CONFIG['LDSHARED']} #{flags} #{Config::CONFIG['CFLAGS']} -I #{hdrdir} -o #{@so_name} #{src_name} #{libs}"
+	  cmd = "#{Config::CONFIG['LDSHARED']} #{flags} #{Config::CONFIG['CFLAGS']} -I #{hdrdir} -o #{so_name} #{src_name} #{libs}"
 	  
           case RUBY_PLATFORM
           when /mswin32/ then
-	    cmd += " -link /INCREMENTAL:no /EXPORT:Init_#{@mod_name}"
+	    cmd += " -link /INCREMENTAL:no /EXPORT:Init_#{module_name}"
           when /i386-cygwin/ then
             cmd += ' -L/usr/local/lib -lruby.dll'
           end
 
           cmd += " 2> /dev/null" if $TESTING
 	  
-	  $stderr.puts "Building #{@so_name} with '#{cmd}'" if $DEBUG
+	  $stderr.puts "Building #{so_name} with '#{cmd}'" if $DEBUG
           `#{cmd}`
           if $? != 0 then
             bad_src_name = src_name + ".bad"
@@ -349,36 +396,11 @@ module Inline
 	end
 
       else
-	$stderr.puts "#{@so_name} is up to date" if $DEBUG
+	$stderr.puts "#{so_name} is up to date" if $DEBUG
       end # unless (file is out of date)
     end # def build
       
-    attr_reader :mod
-    def initialize(mod)
-      @mod = mod
-      if @mod then
-        # Figure out which script file defined the C code
-
-        real_caller = caller[2]
-        real_caller = caller[5] if real_caller =~ /\(eval\)/
-        real_caller = real_caller.split(/:/).first
-
-        @rb_file = File.expand_path(real_caller) # [MS]
-
-        # Extract the basename of the script and clean it up to be 
-        # a valid C identifier
-        rb_script_name = File.basename(@rb_file).gsub(/[^a-zA-Z0-9_]/,'_')
-        # Hash the full path to the script
-        suffix = Digest::MD5.new(@rb_file).to_s[0,4]
-        @mod_name = "Inline_#{@mod.name.gsub('::','__')}_#{rb_script_name}_#{suffix}"
-        @so_name = "#{Inline.directory}/#{@mod_name}.#{Config::CONFIG["DLEXT"]}"
-      end
-      @src = []
-      @sig = {}
-      @flags = []
-      @libs = []
-    end
-
+    ##
     # Adds compiler options to the compiler command line.  No
     # preprocessing is done, so you must have all your dashes and
     # everything.
@@ -387,6 +409,7 @@ module Inline
       @flags.push(*flags)
     end
 
+    ##
     # Adds linker flags to the link command line.  No preprocessing is
     # done, so you must have all your dashes and everything.
     
@@ -394,14 +417,15 @@ module Inline
       @libs.push(*flags)
     end
 
-    # Registers C type-casts <tt>r2c</tt> and <tt>c2r</tt> for
-    # <tt>type</tt>.
+    ##
+    # Registers C type-casts +r2c+ and +c2r+ for +type+.
     
     def add_type_converter(type, r2c, c2r)
       $stderr.puts "WARNING: overridding #{type}" if @@type_map.has_key? type
       @@type_map[type] = [r2c, c2r]
     end
 
+    ##
     # Adds an include to the top of the file. Don't forget to use
     # quotes or angle brackets.
     
@@ -409,12 +433,14 @@ module Inline
       @src << "#include #{header}"
     end
 
+    ##
     # Adds any amount of text/code to the source
     
     def prefix(code)
       @src << code
     end
 
+    ##
     # Adds a C function to the source, including performing automatic
     # type conversion to arguments and the return value. Unknown type
     # conversions can be extended by using +add_type_converter+.
@@ -423,10 +449,14 @@ module Inline
       self.generate(src,:expand_types=>true)
     end
 
+    ##
+    # Same as +c+, but adds a class function.
+    
     def c_singleton src
       self.generate(src,:expand_types=>true,:singleton=>true)
     end
     
+    ##
     # Adds a raw C function to the source. This version does not
     # perform any type conversion and must conform to the ruby/C
     # coding conventions.
@@ -435,6 +465,9 @@ module Inline
       self.generate(src)
     end
 
+    ##
+    # Same as +c_raw+, but adds a class function.
+    
     def c_raw_singleton src
       self.generate(src, :singleton=>true)
     end
@@ -516,6 +549,7 @@ end # module Inline
 
 class Module
 
+  ##
   # Extends the Module class to have an inline method. The default
   # language/builder used is C, but can be specified with the +lang+
   # parameter.
@@ -544,7 +578,8 @@ end
 
 class File
 
-  # Equivalent to <tt>File::open</tt> with an associated block, but moves
+  ##
+  # Equivalent to +File::open+ with an associated block, but moves
   # any existing file with the same name to the side first.
   
   def self.write_with_backup(path) # returns true if file already existed
@@ -566,6 +601,7 @@ end # class File
 
 class Dir
 
+  ##
   # +assert_secure+ checks to see that +path+ exists and has minimally
   # writable permissions. If not, it prints an error and exits. It
   # only works on +POSIX+ systems. Patches for other systems are
