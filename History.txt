@@ -1,4 +1,4 @@
-*** 3.3.2 / 2005-05-17
+*** 3.3.2 / 2005-05-19
 
 + 4 bug fixes
 	+ Fixed a line number issue when using c_raw w/ multi-line signatures.
