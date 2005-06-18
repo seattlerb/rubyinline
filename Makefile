@@ -1,5 +1,5 @@
 RUBY?=/usr/local/bin/ruby
-RDOC?=rdoc18
+RDOC?=rdoc
 RUBYLIB=$(shell $(RUBY) -rrbconfig -e 'include Config; print CONFIG["sitelibdir"]')
 PREFIX?=/usr/local
 

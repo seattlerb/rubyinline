@@ -1,11 +1,7 @@
 #!/usr/local/bin/ruby -w
 
-begin
-  require 'rubygems'
-  require_gem "RubyInline"
-rescue LoadError
-  require 'inline'
-end
+require 'rubygems' rescue nil
+require 'inline'
 
 class MyTest
 

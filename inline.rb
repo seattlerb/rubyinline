@@ -51,7 +51,7 @@ class CompilationError < RuntimeError; end
 # the current namespace.
 
 module Inline
-  VERSION = '3.3.2'
+  VERSION = '3.4.0'
 
   $stderr.puts "RubyInline v #{VERSION}" if $DEBUG
 
@@ -262,9 +262,11 @@ module Inline
 
     def initialize(mod)
       raise ArgumentError, "Class/Module arg is required" unless Module === mod
-
-      real_caller = caller[2] # new -> inline -> real_caller|eval
-      real_caller = caller[5] if real_caller =~ /\(eval\)/
+      # new (but not on some 1.8s) -> inline -> real_caller|eval
+      stack = caller
+      meth = stack.shift until meth =~ /in .inline/
+      real_caller = stack.first
+      real_caller = stack[3] if real_caller =~ /\(eval\)/
       @real_caller = real_caller.split(/:/).first
       @rb_file = File.expand_path(@real_caller)
 
@@ -550,24 +552,40 @@ end # module Inline
 class Module
 
   ##
+  # options is a hash that allows you to pass extra data to your
+  # builder.  The only key that is guaranteed to exist is :testing.
+
+  attr_reader :options
+
+  ##
   # Extends the Module class to have an inline method. The default
   # language/builder used is C, but can be specified with the +lang+
   # parameter.
   
-  def inline(lang = :C, testing=false)
-
-    begin
-      builder_class = Inline.const_get(lang)
-    rescue NameError
-      require "inline/#{lang}"
-      builder_class = Inline.const_get(lang)
+  def inline(lang = :C, options={})
+    case options
+    when TrueClass, FalseClass then
+      warn "WARNING: 2nd argument to inline is now a hash, changing to {:testing=>#{options}}"
+      options = { :testing => options  }
+    when Hash
+      options[:testing] ||= false
+    else
+      raise ArgumentError, "BLAH"
     end
 
+    builder_class = begin
+                      Inline.const_get(lang)
+                    rescue NameError
+                      require "inline/#{lang}"
+                      Inline.const_get(lang)
+                    end
+
+    @options = options
     builder = builder_class.new self
 
     yield builder
 
-    unless testing then
+    unless options[:testing] then
       unless builder.load_cache then
         builder.build
         builder.load
