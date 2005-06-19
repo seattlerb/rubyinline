@@ -264,7 +264,8 @@ module Inline
       raise ArgumentError, "Class/Module arg is required" unless Module === mod
       # new (but not on some 1.8s) -> inline -> real_caller|eval
       stack = caller
-      meth = stack.shift until meth =~ /in .inline/
+      meth = stack.shift until meth =~ /in .(inline|test_)/ or stack.empty?
+      raise "Couldn't discover caller" if stack.empty?
       real_caller = stack.first
       real_caller = stack[3] if real_caller =~ /\(eval\)/
       @real_caller = real_caller.split(/:/).first
@@ -565,7 +566,7 @@ class Module
   def inline(lang = :C, options={})
     case options
     when TrueClass, FalseClass then
-      warn "WARNING: 2nd argument to inline is now a hash, changing to {:testing=>#{options}}"
+      warn "WARNING: 2nd argument to inline is now a hash, changing to {:testing=>#{options}}" unless options
       options = { :testing => options  }
     when Hash
       options[:testing] ||= false
