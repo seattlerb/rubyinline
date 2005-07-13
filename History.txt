@@ -1,11 +1,12 @@
-*** 3.4.0 / 2005-06-??
+*** 3.4.0 / 2005-07-13
 
 + 2 minor enhancement
 	+ Changed inline to take the language and a hash of options.
 		+ Still backwards compatible, for now, and emits a warning.
 	+ Options are available via the builder passed to your block.
-+ N bug fixes
++ 2 bug fixes
 	+ Modified caller discovery, yet again, due to changes in ruby 1.8.3.
+	+ More compatible and clean with non-gems systems.
 
 *** 3.3.2 / 2005-05-19
 
