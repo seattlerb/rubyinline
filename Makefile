@@ -30,17 +30,12 @@ bench:
 	@$(RUBY) -I. ./example.rb 2 2> /dev/null
 
 install:
-	echo "installing inline.rb in $(RUBYLIB)"
-	cp -f inline.rb $(RUBYLIB)
-	cp -f inline_package $(PREFIX)/bin
-	chmod 755 $(PREFIX)/bin/inline_package
-	echo Installed
+	install -m 0444 inline.rb $(RUBYLIB)
+	install -m 0555 inline_package $(PREFIX)/bin
 
 uninstall:
-	echo "Removing inline.rb from $(RUBYLIB)"
-	rm $(RUBYLIB)/inline.rb
+	rm -f $(RUBYLIB)/inline.rb
 	rm -f $(PREFIX)/bin/inline_package
-	echo Removed
 
 clean:
 	rm -rf *~ doc ~/.ruby_inline
