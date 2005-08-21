@@ -12,8 +12,6 @@ class MyTest
   end
 
   inline do |builder|
-    builder.include "<math.h>"
-
     builder.c "
     long factorial_c(int max) {
       int i=max, result=1;

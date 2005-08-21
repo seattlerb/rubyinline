@@ -32,31 +32,31 @@ compiler (read: windows)!
 
   require "inline"
   class MyTest
-    inline_c "
-      long factorial(int max) {
-        int i=max, result=1;
-        while (i >= 2) { result *= i--; }
-        return result;
-      }"
+    inline do |builder|
+      builder.c "
+        long factorial(int max) {
+          int i=max, result=1;
+          while (i >= 2) { result *= i--; }
+          return result;
+        }"
   end
   t = MyTest.new()
   factorial_5 = t.factorial(5)
 
 ** SYNOPSYS (C++):
 
-  $INLINE_FLAGS = " -x c++ "
-  $INLINE_LIBS  = " -lstdc++ "
-  require "inline"
+  require 'inline'
   class MyTest
-    inline_c "
-      #include <iostream>
-      static
-      VALUE
-      hello(int i) {
-        while (i-- > 0) {
-          std::cout << \"hello\" << std::endl;
-        }
-      }"
+    inline(:C) do |builder|
+      builder.include '<iostream>'
+      builder.add_compile_flags '-x c++', '-lstdc++'
+      builder.c '
+        void hello(int i) {
+          while (i-- > 0) {
+            std::cout << "hello" << std::endl;
+          }
+        }'
+    end
   end
   t = MyTest.new()
   t.hello(3)
@@ -95,7 +95,7 @@ compiler (read: windows)!
 
 ** REQUIREMENTS:
 
-+ Ruby - 1.6.7 & 1.8.2 has been used on FreeBSD 4.6+ and MacOSX.
++ Ruby - 1.8.2 has been used on FreeBSD 4.6+ and MacOSX.
 + POSIX compliant system (ie pretty much any UNIX, or Cygwin on MS platforms).
 + A C/C++ compiler (the same one that compiled your ruby interpreter).
 + test::unit for running tests ( http://testunit.talbott.ws/ ).
