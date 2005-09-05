@@ -386,7 +386,7 @@ module Inline
             cmd += ' -L/usr/local/lib -lruby.dll'
           end
 
-          cmd += " 2> /dev/null" if $TESTING
+          cmd += " 2> /dev/null" if $TESTING and not $DEBUG
 	  
 	  $stderr.puts "Building #{so_name} with '#{cmd}'" if $DEBUG
           `#{cmd}`
