@@ -51,7 +51,7 @@ class CompilationError < RuntimeError; end
 # the current namespace.
 
 module Inline
-  VERSION = '3.4.0'
+  VERSION = '3.5.0'
 
   $stderr.puts "RubyInline v #{VERSION}" if $DEBUG
 
