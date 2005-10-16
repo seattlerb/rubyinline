@@ -276,6 +276,7 @@ module Inline
       @sig = {}
       @flags = []
       @libs = []
+      @init_extra = []
     end
 
     ##
@@ -337,6 +338,9 @@ module Inline
             end
 	    io.puts  "(VALUE(*)(ANYARGS))#{name}, #{arity});"
 	  end
+
+          io.puts @init_extra.join("\n") unless @init_extra.empty?
+
 	  io.puts
 	  io.puts "  }"
 	  io.puts "#ifdef __cplusplus"
@@ -418,6 +422,13 @@ module Inline
     
     def add_link_flags(*flags)
       @libs.push(*flags)
+    end
+
+    ##
+    # Adds custom content to the end of the init function.
+
+    def add_to_init(*src)
+      @init_extra.push(*src)
     end
 
     ##

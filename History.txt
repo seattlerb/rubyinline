@@ -1,3 +1,13 @@
+*** 3.5.0 / 2005-10-15
+
++ 4 minor enhancements
+	+ Switched to install for Makefile.
+	+ Lots of minor cleanup.
+	+ Added add_to_init to extend init methods. Great hack!
+	+ Added 2 demo files used in the rubyconf 2005 presentation.
++ 1 bug fix
+	+ Fixed example in README.txt. OOPS!
+
 *** 3.4.0 / 2005-07-13
 
 + 2 minor enhancement
