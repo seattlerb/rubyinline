@@ -683,6 +683,8 @@ class TestInlinePackager < InlineTestCase
 
   def test_generate_rakefile_no_rakefile
     FileUtils.rm 'Rakefile' if test ?f, 'Rakefile' and $DEBUG
+    FileUtils.rm_r 'lib' if test ?d, 'lib' and $DEBUG
+
     @packager.generate_rakefile
 
     assert_equal util_generate_rakefile, File.read('Rakefile')
