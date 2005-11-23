@@ -12,14 +12,16 @@ class InlineTestCase < Test::Unit::TestCase
 
   def setup
     super
-    @rootdir = "/tmp/#{$$}"
-    Dir.mkdir @rootdir, 0700
+    @rootdir = "/tmp/test_inline.#{$$}"
+    Dir.mkdir @rootdir, 0700 unless test ?d, @rootdir
     ENV['INLINEDIR'] = @rootdir
   end
 
   def teardown
-    FileUtils.rm_rf @rootdir unless $DEBUG
-    ENV.delete 'INLINEDIR'
+    unless $DEBUG then
+      FileUtils.rm_rf @rootdir 
+      ENV.delete 'INLINEDIR'
+    end
   end
 
   def test_stupid
@@ -611,13 +613,14 @@ class TestInlinePackager < InlineTestCase
 
   def setup
     super
+
     @name = "Packager Test"
     @version = "1.0.0"
     @summary = "This is a Packager test gem"
     @packager = Inline::Packager.new @name, @version, @summary
 
     @package_dir = @rootdir + "_package"
-    Dir.mkdir @package_dir, 0700 # unless test ?d, @package_dir
+    Dir.mkdir @package_dir, 0700 unless test ?d, @package_dir
     @orig_dir = Dir.pwd
     Dir.chdir @package_dir
 
@@ -656,7 +659,7 @@ class TestInlinePackager < InlineTestCase
     built_lib = "Inline_Test.#{@ext}"
     dir = "#{@rootdir}/.ruby_inline"
 
-    Dir.mkdir dir, 0700
+    Dir.mkdir dir, 0700 unless test ?d, dir
     Dir.chdir dir do
       FileUtils.touch built_lib
     end
@@ -670,6 +673,7 @@ class TestInlinePackager < InlineTestCase
   end
 
   def test_generate_rakefile_has_rakefile
+    FileUtils.rm 'Rakefile' if test ?f, 'Rakefile' and $DEBUG
     FileUtils.touch 'Rakefile'
     
     @packager.generate_rakefile
@@ -678,23 +682,30 @@ class TestInlinePackager < InlineTestCase
   end
 
   def test_generate_rakefile_no_rakefile
+    FileUtils.rm 'Rakefile' if test ?f, 'Rakefile' and $DEBUG
     @packager.generate_rakefile
 
     assert_equal util_generate_rakefile, File.read('Rakefile')
   end
 
   def test_build_gem
+#    test_copy_libs
+    pwd = Dir.pwd
+
     File.open 'Rakefile', 'w' do |fp|
-      fp.puts util_generate_rakefile
+      src = util_generate_rakefile
+      fp.puts src
     end
 
     @packager.build_gem
+
     package_name = "pkg/#{@name}-#{@version}.gem"
-    assert_equal true, File.exists?(package_name)
-    assert_equal true, system("gem check #{package_name}")
+    assert File.exists?(package_name), "File #{package_name} must exist"
+    assert system("gem check #{package_name}"), "gem check must pass"
   end
 
   def test_gem_libs
+    system "rm lib/inline/*" if $DEBUG # hacky
     @packager.libs_copied = true
     expected = ["lib/blah.rb", "lib/inline/Inline_Test.#{@ext}"]
 

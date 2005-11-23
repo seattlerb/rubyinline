@@ -230,7 +230,7 @@ module Inline
               end
 
       file, line = caller[1].split(/:/)
-      result = "# line #{line.to_i + delta} \"#{file}\"\n" + result unless $DEBUG
+      result = "# line #{line.to_i + delta} \"#{file}\"\n" + result unless $DEBUG and not $TESTING
 
       @src << result
       @sig[function_name] = [arity,singleton]
@@ -536,10 +536,10 @@ module Inline
     end
 
     def build_gem
-      STDERR.puts "==> Running rake" unless $TESTING
+      STDERR.puts "==> Running rake" unless $TESTING or $DEBUG
 
       cmd = "rake package"
-      cmd += "> /dev/null 2> /dev/null" if $TESTING
+      cmd += "> /dev/null 2> /dev/null" if $TESTING unless $DEBUG
       system cmd
 
       STDERR.puts unless $TESTING
