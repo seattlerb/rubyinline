@@ -4,6 +4,7 @@ $TESTING = true
 
 require 'inline'
 require 'tempfile'
+require 'tmpdir'
 require 'test/unit'
 
 File.umask(0)
@@ -12,7 +13,7 @@ class InlineTestCase < Test::Unit::TestCase
 
   def setup
     super
-    @rootdir = "/tmp/test_inline.#{$$}"
+    @rootdir = File.join(Dir.tmpdir, "test_inline.#{$$}")
     Dir.mkdir @rootdir, 0700 unless test ?d, @rootdir
     ENV['INLINEDIR'] = @rootdir
   end
@@ -31,7 +32,6 @@ class InlineTestCase < Test::Unit::TestCase
 end
 
 class TestDir < InlineTestCase
-
   def setup
     super
     @count = 1
@@ -43,11 +43,11 @@ class TestDir < InlineTestCase
     Dir.mkdir path, perms unless perms.nil?
     if should_pass then
       assert_nothing_raised do
-	Dir.assert_secure path
+        Dir.assert_secure path
       end
     else
       assert_raises(perms.nil? ? Errno::ENOENT : SecurityError) do
-	Dir.assert_secure path
+        Dir.assert_secure path
       end
     end
   end
@@ -62,7 +62,7 @@ class TestDir < InlineTestCase
     # missing
     util_assert_secure nil, false
   end
-end
+end unless Inline::WINDOZE
 
 class TestInline < InlineTestCase
 
@@ -504,8 +504,7 @@ puts(s); return rb_str_new2(s)}"
   def util_test_build(src)
     tempfile = Tempfile.new("util_test_build")
     tempfile.write src
-    tempfile.flush
-    tempfile.rewind
+    tempfile.close
     rb_file = tempfile.path + ".rb"
     File.rename tempfile.path, rb_file
     begin
@@ -703,7 +702,7 @@ class TestInlinePackager < InlineTestCase
 
     package_name = "pkg/#{@name}-#{@version}.gem"
     assert File.exists?(package_name), "File #{package_name} must exist"
-    assert system("gem check #{package_name}"), "gem check must pass"
+    assert system("#{Inline::GEM} check #{package_name}"), "gem check must pass"
   end
 
   def test_gem_libs

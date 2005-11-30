@@ -51,7 +51,12 @@ class CompilationError < RuntimeError; end
 # the current namespace.
 
 module Inline
-  VERSION = '3.5.0'
+  VERSION = '3.6.0'
+  
+  WINDOZE  = /win32/ =~ RUBY_PLATFORM
+  DEV_NULL = (WINDOZE ? 'nul' : '/dev/null')
+  RAKE     = (WINDOZE ? 'rake.cmd' : 'rake')
+  GEM      = (WINDOZE ? 'gem.cmd'  : 'gem')
 
   $stderr.puts "RubyInline v #{VERSION}" if $DEBUG
 
@@ -381,19 +386,20 @@ module Inline
 	  libs  = @libs.join(' ')
 	  libs += " #{$INLINE_LIBS}" if defined? $INLINE_LIBS	# DEPRECATE
 
-	  cmd = "#{Config::CONFIG['LDSHARED']} #{flags} #{Config::CONFIG['CFLAGS']} -I #{hdrdir} -o #{so_name} #{src_name} #{libs}"
+         cmd = "#{Config::CONFIG['LDSHARED']} #{flags} #{Config::CONFIG['CFLAGS']} -I #{hdrdir} -o \"#{so_name}\" \"#{File.expand_path(src_name)}\" #{libs}"
 	  
           case RUBY_PLATFORM
           when /mswin32/ then
-	    cmd += " -link /INCREMENTAL:no /EXPORT:Init_#{module_name}"
+            cmd += " -link /LIBPATH:\"#{Config::CONFIG['libdir']}\" /DEFAULTLIB:\"#{Config::CONFIG['LIBRUBY']}\" /INCREMENTAL:no /EXPORT:Init_#{module_name}"
           when /i386-cygwin/ then
             cmd += ' -L/usr/local/lib -lruby.dll'
           end
 
-          cmd += " 2> /dev/null" if $TESTING and not $DEBUG
+          cmd += " 2> #{DEV_NULL}" if $TESTING and not $DEBUG
 	  
 	  $stderr.puts "Building #{so_name} with '#{cmd}'" if $DEBUG
-          `#{cmd}`
+          result = `#{cmd}`
+          $stderr.puts "Output:\n#{result}" if $DEBUG
           if $? != 0 then
             bad_src_name = src_name + ".bad"
             File.rename src_name, bad_src_name
@@ -538,12 +544,17 @@ module Inline
     def build_gem
       STDERR.puts "==> Running rake" unless $TESTING or $DEBUG
 
-      cmd = "rake package"
-      cmd += "> /dev/null 2> /dev/null" if $TESTING unless $DEBUG
-      system cmd
-
-      STDERR.puts unless $TESTING
-      STDERR.puts "Ok, you now have a gem in ./pkg, enjoy!" unless $TESTING
+      cmd = "#{RAKE} package"
+      cmd += "> #{DEV_NULL} 2> #{DEV_NULL}" if $TESTING unless $DEBUG
+      
+      if system cmd then
+        unless $TESTING then
+          STDERR.puts
+          STDERR.puts "Ok, you now have a gem in ./pkg, enjoy!"
+        end
+      else
+        STDERR.puts "Calling rake to build the gem failed." unless $TESTING
+      end
     end
 
     def gem_libs

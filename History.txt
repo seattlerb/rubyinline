@@ -1,3 +1,12 @@
+*** 3.6.0 / 2005-11-30
+
++ 3 minor enhancements
+	+ Improved testing under $DEBUG.
+	+ Upgraded rake.
+	+ Added Nathaniel and Dan's patches for windows support.
++ 1 bug fix
+	+ Fixed a number of issues wrt testing.
+
 *** 3.5.0 / 2005-10-15
 
 + 4 minor enhancements

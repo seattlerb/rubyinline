@@ -2,6 +2,7 @@ History.txt
 Makefile
 Manifest.txt
 README.txt
+Rakefile
 demo/fastmath.rb
 demo/hello.rb
 example.rb
