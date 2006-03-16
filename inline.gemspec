@@ -1,7 +1,7 @@
 # -*- ruby -*-
 
 require 'rubygems'
-require 'inline'
+require './inline.rb'
 
 spec = Gem::Specification.new do |s|
 
