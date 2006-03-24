@@ -654,7 +654,7 @@ class Dir
       if $TESTING then
 	raise SecurityError, "Directory #{path} is insecure"
       else
-	$stderr.puts "#{path} is insecure (#{sprintf('%o', mode)}), needs 0700 for perms. Exiting."
+	$stderr.puts "#{path} is insecure (#{'%o' % mode}). It may not be group or world writable. Exiting."
 	exit 1
       end
     end
