@@ -64,8 +64,14 @@ module Inline
 
   def self.rootdir
     env = ENV['INLINEDIR'] || ENV['HOME']
+
+    if env.nil? then
+      $stderr.puts "Define INLINEDIR or HOME in your environment and try again"
+      exit 1
+    end
+
     unless defined? @@rootdir and env == @@rootdir and test ?d, @@rootdir then
-      rootdir = ENV['INLINEDIR'] || ENV['HOME']
+      rootdir = env
       Dir.mkdir rootdir, 0700 unless test ?d, rootdir
       Dir.assert_secure rootdir
       @@rootdir = rootdir
@@ -140,9 +146,11 @@ module Inline
       # clean and collapse whitespace
       sig.gsub!(/\s+/, ' ')
 
-      types = 'void|VALUE|' + @@type_map.keys.map{|x| Regexp.escape(x)}.join('|')
+      unless defined? @types then
+        @types = 'void|VALUE|' + @@type_map.keys.map{|x| Regexp.escape(x)}.join('|')
+      end
 
-      if /(#{types})\s*(\w+)\s*\(([^)]*)\)/ =~ sig then
+      if /(#{@types})\s*(\w+)\s*\(([^)]*)\)/ =~ sig then
 	return_type, function_name, arg_string = $1, $2, $3
 	args = []
 	arg_string.split(',').each do |arg|
@@ -150,8 +158,7 @@ module Inline
 	  # helps normalize into 'char * varname' form
 	  arg = arg.gsub(/\s*\*\s*/, ' * ').strip
 
-	  # if /(#{types})\s+(\w+)\s*$/ =~ arg
-	  if /(((#{types})\s*\*?)+)\s+(\w+)\s*$/ =~ arg then
+	  if /(((#{@types})\s*\*?)+)\s+(\w+)\s*$/ =~ arg then
 	    args.push([$4, $1])
 	  elsif arg != "void" then
 	    $stderr.puts "WARNING: '#{arg}' not understood"

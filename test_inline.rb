@@ -157,12 +157,11 @@ class TestC < InlineTestCase
   end
 
   def util_parse_signature(src, expected, t=nil, a=nil, b=nil)
-    
     result = nil
-    inline do |builder|
-      builder.add_type_converter t, a, b unless t.nil?
-      result = builder.parse_signature(src)
-    end
+
+    builder = Inline::C.new(self.class)
+    builder.add_type_converter t, a, b unless t.nil?
+    result = builder.parse_signature(src)
     
     assert_equal(expected, result)
   end
