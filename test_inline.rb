@@ -80,6 +80,12 @@ end
 class TestInline
 class TestC < InlineTestCase
 
+  def setup
+    super
+    @builder = Inline::C.new(self.class)
+  end
+
+
   # quick hack to make tests more readable,
   # does nothing I wouldn't otherwise do...
   def inline(lang=:C)
@@ -129,15 +135,14 @@ class TestC < InlineTestCase
 
   def util_module_name(*signatures)
     md5 = Digest::MD5.new
-    builder = Inline::C.new(self.class)
 
     signatures.each do |signature|
-      builder.sig[signature] = [nil, 0]
+      @builder.sig[signature] = [nil, 0]
       md5 << signature.to_s
     end
 
     assert_equal("Inline_TestInline__TestC_#{md5.to_s[0,4]}",
-                 builder.module_name)
+                 @builder.module_name)
   end
 
   def test_module_name_0_methods
@@ -159,9 +164,8 @@ class TestC < InlineTestCase
   def util_parse_signature(src, expected, t=nil, a=nil, b=nil)
     result = nil
 
-    builder = Inline::C.new(self.class)
-    builder.add_type_converter t, a, b unless t.nil?
-    result = builder.parse_signature(src)
+    @builder.add_type_converter t, a, b unless t.nil?
+    result = @builder.parse_signature(src)
     
     assert_equal(expected, result)
   end
@@ -244,10 +248,7 @@ class TestC < InlineTestCase
   end
 
   def util_generate(src, expected, expand_types=true)
-    result = ''
-    inline do |builder|
-      result = builder.generate src, expand_types
-    end
+    result = @builder.generate src, expand_types
     result.gsub!(/\# line \d+/, '# line N')
     expected = "# line N \"#{$0}\"\n" + expected
     assert_equal(expected, result)
@@ -457,35 +458,28 @@ puts(s); return rb_str_new2(s)}"
   end
 
   def test_c
-    builder = result = nil
-    inline(:C) do |b|
-      builder = b
-      result = builder.c "int add(int a, int b) { return a + b; }"
-    end
+    result = @builder.c "int add(int a, int b) { return a + b; }"
 
     expected = "# line N \"#{$0}\"\nstatic VALUE add(VALUE self, VALUE _a, VALUE _b) {\n  int a = FIX2INT(_a);\n  int b = FIX2INT(_b);\n return INT2FIX(a + b); }"
 
     result.gsub!(/\# line \d+/, '# line N')
 
     assert_equal expected, result
-    assert_equal [expected], builder.src
+    assert_equal [expected], @builder.src
   end
 
   def test_c_raw
     src = "static VALUE answer_raw(int argc, VALUE *argv, VALUE self) { return INT2NUM(42); }"
-    builder = result = nil
-    inline(:C) do |b|
-      builder = b
-      result = builder.c_raw src.dup
-    end
+    result = @builder.c_raw src.dup
 
     result.gsub!(/\# line \d+/, '# line N')
     expected = "# line N \"#{$0}\"\n" + src
 
     assert_equal expected, result
-    assert_equal [expected], builder.src
+    assert_equal [expected], @builder.src
   end
 
+  # TODO: fix ?
   def util_simple_code(klassname, c_src)
     result = "
       require 'inline'
