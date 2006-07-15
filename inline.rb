@@ -206,6 +206,7 @@ module Inline
 	end
 	prefix += ") {\n"
 	if arity == MAGIC_ARITY then
+          prefix += "  if(argc != #{signature['args'].size}) rb_raise(rb_eArgError, \"Requires #{signature['args'].size} arguments, %d given.\", argc);\n"
 	  count = 0
 	  signature['args'].each do |arg, type|
 	    prefix += "  #{type} #{arg} = #{ruby2c(type)}(argv[#{count}]);\n"
