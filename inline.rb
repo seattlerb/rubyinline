@@ -211,7 +211,6 @@ module Inline
 	    prefix += "  #{type} #{arg} = #{ruby2c(type)}(argv[#{count}]);\n"
 	    count += 1
 	  end
-          prefix += "  if(argc != #{signature['args'].size}) rb_raise(rb_eArgError, \"Requires #{signature['args'].size} arguments, %d given.\", argc);\n"
 	else
 	  signature['args'].each do |arg, type|
 	    prefix += "  #{type} #{arg} = #{ruby2c(type)}(_#{arg});\n"

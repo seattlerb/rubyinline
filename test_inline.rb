@@ -364,7 +364,6 @@ return INT2FIX(42)}"
   int x = FIX2INT(argv[0]);
   int y = FIX2INT(argv[1]);
   int z = FIX2INT(argv[2]);
-  if(argc != 3) rb_raise(rb_eArgError, \"Requires 3 arguments, %d given.\", argc);
 blah; return INT2FIX(x+y+z);}"
 
     util_generate(src, expected)
