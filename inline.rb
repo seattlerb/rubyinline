@@ -102,7 +102,7 @@ module Inline
 
     protected unless $TESTING
 
-    MAGIC_ARITY_THRESHOLD = 2
+    MAGIC_ARITY_THRESHOLD = 15
     MAGIC_ARITY = -1
 
     @@type_map = {
@@ -166,7 +166,7 @@ module Inline
 	end
 
 	arity = args.size
-	arity = -1 if arity > MAGIC_ARITY_THRESHOLD or raw
+	arity = MAGIC_ARITY if raw
 
 	return {
 	  'return' => return_type,
@@ -180,10 +180,7 @@ module Inline
     end # def parse_signature
 
     def generate(src, options={})
-
-      if not Hash === options then
-        options = {:expand_types=>options}
-      end
+      options = {:expand_types=>options} unless Hash === options
 
       expand_types = options[:expand_types]
       singleton = options[:singleton]
@@ -193,6 +190,8 @@ module Inline
       function_name = signature['name']
       return_type = signature['return']
       arity = signature['arity']
+
+      raise ArgumentError, "too many arguments" if arity > MAGIC_ARITY_THRESHOLD
 
       if expand_types then
 	prefix = "static VALUE #{function_name}("
@@ -205,17 +204,9 @@ module Inline
 	  end
 	end
 	prefix += ") {\n"
-	if arity == MAGIC_ARITY then
-	  count = 0
-	  signature['args'].each do |arg, type|
-	    prefix += "  #{type} #{arg} = #{ruby2c(type)}(argv[#{count}]);\n"
-	    count += 1
-	  end
-	else
-	  signature['args'].each do |arg, type|
-	    prefix += "  #{type} #{arg} = #{ruby2c(type)}(_#{arg});\n"
-	  end
-	end
+        signature['args'].each do |arg, type|
+          prefix += "  #{type} #{arg} = #{ruby2c(type)}(_#{arg});\n"
+        end
 	# replace the function signature (hopefully) with new sig (prefix)
 	result.sub!(/[^;\/\"\>]+#{function_name}\s*\([^\{]+\{/, "\n" + prefix)
 	result.sub!(/\A\n/, '') # strip off the \n in front in case we added it
@@ -280,7 +271,7 @@ module Inline
       raise "Couldn't discover caller" if stack.empty?
       real_caller = stack.first
       real_caller = stack[3] if real_caller =~ /\(eval\)/
-      @real_caller = real_caller.split(/:/).first
+      @real_caller = real_caller.split(/:/)[0..-2].join(':')
       @rb_file = File.expand_path(@real_caller)
 
       @mod = mod
@@ -320,7 +311,6 @@ module Inline
     def build
       so_name = self.so_name
       so_exists = File.file? so_name
-
       unless so_exists and File.mtime(rb_file) < File.mtime(so_name)
 	
 	src_name = "#{Inline.directory}/#{module_name}.c"
@@ -335,6 +325,7 @@ module Inline
 	  io.puts "#ifdef __cplusplus"
 	  io.puts "extern \"C\" {"
 	  io.puts "#endif"
+          io.puts "  __declspec(dllexport)" if WINDOZE
 	  io.puts "  void Init_#{module_name}() {"
           io.puts "    VALUE c = rb_cObject;"
           # TODO: use rb_class2path
@@ -389,9 +380,7 @@ module Inline
 	  end
 
 	  flags = @flags.join(' ')
-	  flags += " #{$INLINE_FLAGS}" if defined? $INLINE_FLAGS# DEPRECATE
 	  libs  = @libs.join(' ')
-	  libs += " #{$INLINE_LIBS}" if defined? $INLINE_LIBS	# DEPRECATE
 
          cmd = "#{Config::CONFIG['LDSHARED']} #{flags} #{Config::CONFIG['CFLAGS']} -I #{hdrdir} -o \"#{so_name}\" \"#{File.expand_path(src_name)}\" #{libs}"
 	  
@@ -412,6 +401,19 @@ module Inline
             File.rename src_name, bad_src_name
             raise CompilationError, "error executing #{cmd}: #{$?}\nRenamed #{src_name} to #{bad_src_name}"
           end
+
+          if WINDOZE then
+            Dir.chdir self.directory do
+              cmd = "mt /manifest lib.so.manifest /outputresource:so.dll;#2"
+              $stderr.puts "Embedding manifest with '#{cmd}'" if $DEBUG
+              result = `#{cmd}`
+              $stderr.puts "Output:\n#{result}" if $DEBUG
+              if $? != 0 then
+                raise CompilationError, "error executing #{cmd}: #{$?}"
+              end
+            end
+          end
+
 	  $stderr.puts "Built successfully" if $DEBUG
 	end
 

@@ -1,6 +1,6 @@
-#!/usr/local/bin/ruby -w 
-
 $TESTING = true
+
+$0 = __FILE__ if $0 == "-e" # for autotest style execution
 
 require 'inline'
 require 'tempfile'
@@ -8,6 +8,16 @@ require 'tmpdir'
 require 'test/unit'
 
 File.umask(0)
+
+module Foo
+  class Bar
+    inline do |builder|
+      builder.c <<-EOC
+        int arity6(int u, int v, int w, int x, int y, char * z) { return x + y + strlen(z); }
+      EOC
+    end
+  end
+end
 
 class InlineTestCase < Test::Unit::TestCase
 
@@ -357,16 +367,15 @@ return INT2FIX(42)}"
     util_generate_raw(src, expected)
   end
 
-  def test_generate_arity_3
-    src = "int func(int x, int y, int z) {blah; return x+y+z;}"
+  def test_generate_arity_too_many
+    src = "int too_many(int a1, int a2, int a3, int a4, int a5, int a6, int a7, int a8, int a9, int aA, int aB, int aC, int aD, int aE, int aF, int ugh) {
+  int q = v + w;
+  return q+x+y+z;
+}"
 
-    expected = "static VALUE func(int argc, VALUE *argv, VALUE self) {
-  int x = FIX2INT(argv[0]);
-  int y = FIX2INT(argv[1]);
-  int z = FIX2INT(argv[2]);
-blah; return INT2FIX(x+y+z);}"
-
-    util_generate(src, expected)
+    assert_raise(ArgumentError) do
+      @builder.generate src, true
+    end
   end
 
   def test_generate_comments
@@ -584,6 +593,26 @@ class TestModule < InlineTestCase
     assert_equal(12, fb.twelve_instance)
     assert_equal(12, Foo::Bar.twelve_class)
     `rm "#{tempfile.path}.rb"`
+  end
+
+  def test_argument_check_good
+    fb = Foo::Bar.new
+    assert_equal 13, fb.arity6(1, 2, 3, 4, 5, "blah")
+  end
+
+  def test_argument_check_fewer
+    fb = Foo::Bar.new
+    
+    assert_raise(ArgumentError) do
+      assert_equal 13, fb.arity6(1, 2, 3)
+    end
+  end
+
+  def test_argument_check_more
+    fb = Foo::Bar.new
+    assert_raise ArgumentError do
+      assert_equal 13, fb.arity6(1, 2, 3, 4, 5, "blah", :extra)
+    end
   end
 
   def test_inline
