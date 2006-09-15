@@ -199,14 +199,13 @@ module Inline
 	  prefix += "int argc, VALUE *argv, VALUE self"
 	else
 	  prefix += "VALUE self"
-	  signature['args'].each do |arg, type|
-	    prefix += ", VALUE _#{arg}"
-	  end
+          prefix += signature['args'].map { |arg, type| ", VALUE _#{arg}"}.join
 	end
 	prefix += ") {\n"
-        signature['args'].each do |arg, type|
-          prefix += "  #{type} #{arg} = #{ruby2c(type)}(_#{arg});\n"
-        end
+        prefix += signature['args'].map { |arg, type|
+          "  #{type} #{arg} = #{ruby2c(type)}(_#{arg});\n"
+        }.join
+
 	# replace the function signature (hopefully) with new sig (prefix)
 	result.sub!(/[^;\/\"\>]+#{function_name}\s*\([^\{]+\{/, "\n" + prefix)
 	result.sub!(/\A\n/, '') # strip off the \n in front in case we added it
@@ -245,7 +244,7 @@ module Inline
       unless defined? @module_name then
         module_name = @mod.name.gsub('::','__')
         md5 = Digest::MD5.new
-        @sig.keys.sort_by{|x| x.to_s}.each { |m| md5 << m.to_s }
+        @sig.keys.sort_by { |x| x.to_s }.each { |m| md5 << m.to_s }
         @module_name = "Inline_#{module_name}_#{md5.to_s[0,4]}"
       end
       @module_name
@@ -328,10 +327,12 @@ module Inline
           io.puts "  __declspec(dllexport)" if WINDOZE
 	  io.puts "  void Init_#{module_name}() {"
           io.puts "    VALUE c = rb_cObject;"
+
           # TODO: use rb_class2path
-          @mod.name.split("::").each do |n|
-            io.puts "    c = rb_const_get_at(c,rb_intern(\"#{n}\"));"
-          end
+          io.puts @mod.name.split("::").map { |n|
+            "    c = rb_const_get_at(c,rb_intern(\"#{n}\"));"
+          }.join("\n")
+
 	  @sig.keys.sort.each do |name|
 	    arity, singleton = @sig[name]
             if singleton then

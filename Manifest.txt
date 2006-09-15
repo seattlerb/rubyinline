@@ -1,5 +1,4 @@
 History.txt
-Makefile
 Manifest.txt
 README.txt
 Rakefile
@@ -7,7 +6,6 @@ demo/fastmath.rb
 demo/hello.rb
 example.rb
 example2.rb
-inline.gemspec
 inline.rb
 inline_package
 test_inline.rb
