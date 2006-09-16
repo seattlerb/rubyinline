@@ -39,6 +39,7 @@ compiler (read: windows)!
           while (i >= 2) { result *= i--; }
           return result;
         }"
+    end
   end
   t = MyTest.new()
   factorial_5 = t.factorial(5)
