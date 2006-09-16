@@ -122,6 +122,7 @@ class TestC < InlineTestCase
     assert_equal 'NUM2UINT', x.ruby2c("unsigned int")
     assert_equal 'NUM2UINT', x.ruby2c("unsigned long")
     assert_equal 'NUM2UINT', x.ruby2c("unsigned")
+    assert_equal '',         x.ruby2c("VALUE")
 
     assert_raises ArgumentError do
       x.ruby2c('blah')
@@ -137,6 +138,7 @@ class TestC < InlineTestCase
     assert_equal 'UINT2NUM',    x.c2ruby("unsigned int")
     assert_equal 'UINT2NUM',    x.c2ruby("unsigned long")
     assert_equal 'UINT2NUM',    x.c2ruby("unsigned")
+    assert_equal '',            x.c2ruby("VALUE")
 
     assert_raises ArgumentError do
       x.c2ruby('blah')

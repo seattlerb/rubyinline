@@ -114,6 +114,7 @@ module Inline
       'unsigned int'  => [ 'NUM2UINT', 'UINT2NUM' ],
       'unsigned long' => [ 'NUM2UINT', 'UINT2NUM' ],
       'unsigned'      => [ 'NUM2UINT', 'UINT2NUM' ],
+      'VALUE'         => [ '', '' ],
       # Can't do these converters because they conflict with the above:
       # ID2SYM(x), SYM2ID(x), NUM2DBL(x), FIX2UINT(x)
     }

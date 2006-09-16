@@ -1,11 +1,16 @@
-*** 3.6.0 / 2005-11-30
+*** 3.6.0 / 2005-11-30 (omg I suck: actual release: 2006-09-15)
 
-+ 3 minor enhancements
-	+ Improved testing under $DEBUG.
-	+ Upgraded rake.
++ 6 minor enhancements
+	+ C builder can now be used directly for other foreign language glue.
+	+ Pretty much all (c) functions are plain argument style, not argc/argv.
 	+ Added Nathaniel and Dan's patches for windows support.
-+ 1 bug fix
+	+ Added VALUE as a default known type.
+	+ Improved testing under $DEBUG.
+	+ Deprecated $INLINE_FLAGS and $INLINE_LIBS are dead.
++ 3 bug fixes
 	+ Fixed a number of issues wrt testing.
+	+ Cleaned up and cached certain calculations.
+	+ Some windows compiler fixes went in, but MS compiler is a PITA still.
 
 *** 3.5.0 / 2005-10-15
 
