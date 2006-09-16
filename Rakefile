@@ -108,10 +108,11 @@ task :install do
 end
 
 task :uninstall do
-  rm_f File.join(RUBYLIB, 'inline.rb')
-  rm_f File.join(PREFIX, 'bin', 'inline_package')
+  rm File.join(RUBYLIB, 'inline.rb')
+  rm File.join(PREFIX, 'bin', 'inline_package')
 end
 
 task :clean => [ :clobber_rdoc, :clobber_package ] do
-  rm_rf %w(*~ doc ~/.ruby_inline)
+  rm Dir["*~"]
+  rm_rf %w(~/.ruby_inline) 
 end
