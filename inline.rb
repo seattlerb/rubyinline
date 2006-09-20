@@ -148,7 +148,7 @@ module Inline
       sig.gsub!(/\s+/, ' ')
 
       unless defined? @types then
-        @types = 'void|VALUE|' + @@type_map.keys.map{|x| Regexp.escape(x)}.join('|')
+        @types = 'void|' + @@type_map.keys.map{|x| Regexp.escape(x)}.join('|')
       end
 
       if /(#{@types})\s*(\w+)\s*\(([^)]*)\)/ =~ sig then
@@ -452,7 +452,7 @@ module Inline
     # Registers C type-casts +r2c+ and +c2r+ for +type+.
     
     def add_type_converter(type, r2c, c2r)
-      $stderr.puts "WARNING: overridding #{type}" if @@type_map.has_key? type
+      $stderr.puts "WARNING: overridding #{type} on #{caller[0]}" if @@type_map.has_key? type
       @@type_map[type] = [r2c, c2r]
     end
 
