@@ -9,7 +9,6 @@ Hoe.new("RubyInline", Inline::VERSION) do |p|
   p.summary = "Multi-language extension coding within ruby."
   p.description = p.paragraphs_of("README.txt", 3).join
   p.clean_globs << File.expand_path("~/.ruby_inline")
-  p.extra_deps << ['RubyInline', '>= 3.2.0']
 
   p.spec_extras[:requirements] = "A POSIX environment and a compiler for your language."
 end
