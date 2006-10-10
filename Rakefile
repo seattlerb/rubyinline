@@ -11,6 +11,11 @@ Hoe.new("RubyInline", Inline::VERSION) do |p|
   p.clean_globs << File.expand_path("~/.ruby_inline")
 
   p.spec_extras[:requirements] = "A POSIX environment and a compiler for your language."
+  p.spec_extras[:require_paths] = ["."]
+
+  p.lib_files = %w(inline.rb)
+  p.test_files = %w(test_inline.rb)
+  p.bin_files = %w(inline_package)
 end
 
 task :examples do
