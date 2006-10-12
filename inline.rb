@@ -51,7 +51,7 @@ class CompilationError < RuntimeError; end
 # the current namespace.
 
 module Inline
-  VERSION = '3.6.0'
+  VERSION = '3.6.1'
   
   WINDOZE  = /win32/ =~ RUBY_PLATFORM
   DEV_NULL = (WINDOZE ? 'nul' : '/dev/null')
@@ -386,9 +386,12 @@ module Inline
 
          cmd = "#{Config::CONFIG['LDSHARED']} #{flags} #{Config::CONFIG['CFLAGS']} -I #{hdrdir} -o \"#{so_name}\" \"#{File.expand_path(src_name)}\" #{libs}"
 	  
+          # gawd windoze land sucks
           case RUBY_PLATFORM
           when /mswin32/ then
             cmd += " -link /LIBPATH:\"#{Config::CONFIG['libdir']}\" /DEFAULTLIB:\"#{Config::CONFIG['LIBRUBY']}\" /INCREMENTAL:no /EXPORT:Init_#{module_name}"
+          when /mingw32/ then
+            cmd += " -Wl,--enable-auto-import -L#{Config::CONFIG['libdir']} -lmsvcrt-ruby18"
           when /i386-cygwin/ then
             cmd += ' -L/usr/local/lib -lruby.dll'
           end
