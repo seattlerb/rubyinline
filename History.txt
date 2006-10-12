@@ -1,3 +1,8 @@
+*** 3.6.2 / 2006-10-12
+
++ 1 bug fix
+	+ comment stripper much more sane to fix problems on certain linux distros
+
 *** 3.6.1 / 2006-10-11
 
 + 1 minor enhancement

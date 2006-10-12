@@ -392,6 +392,7 @@ return INT2FIX(42)}"
     expected = "static VALUE add(VALUE self, VALUE _x, VALUE _y) {
   int x = FIX2INT(_x);
   int y = FIX2INT(_y);
+
       return INT2FIX(x+y);
     }
     "
@@ -413,6 +414,7 @@ add(int x, int y) { // add two numbers
 static VALUE add(VALUE self, VALUE _x, VALUE _y) {
   int x = FIX2INT(_x);
   int y = FIX2INT(_y);
+
   return INT2FIX(x+y);
 }
 "
@@ -432,6 +434,7 @@ add(int x, int y) { // add two numbers
 static VALUE add(VALUE self, VALUE _x, VALUE _y) {
   int x = FIX2INT(_x);
   int y = FIX2INT(_y);
+
   return INT2FIX(x+y);
 }
 "
@@ -534,6 +537,49 @@ puts(s); return rb_str_new2(s)}"
         flunk
       end
     end
+  end
+
+  def util_strip_comments(input)
+    expect = 'line 1
+
+#if 0
+  line 2
+#endif
+  line 3
+
+'
+
+    assert_equal expect, @builder.strip_comments(input)
+  end
+
+  def test_strip_comments_cpp
+    input = 'line 1
+
+#if 0
+  line 2
+#endif
+  // 1 comment
+  // 2 comment
+  line 3               // trailing comment
+
+'
+    util_strip_comments(input)
+  end
+
+  def test_strip_comments_c
+    input = 'line 1
+
+#if 0
+  line 2
+#endif
+  /*
+   * 1 comment
+   * 2 comment
+   */
+  line 3               /* trailing comment */
+
+'
+    util_strip_comments(input)
   end
 
   def test_load

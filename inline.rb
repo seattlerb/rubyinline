@@ -51,7 +51,7 @@ class CompilationError < RuntimeError; end
 # the current namespace.
 
 module Inline
-  VERSION = '3.6.1'
+  VERSION = '3.6.2'
   
   WINDOZE  = /win32/ =~ RUBY_PLATFORM
   DEV_NULL = (WINDOZE ? 'nul' : '/dev/null')
@@ -131,9 +131,10 @@ module Inline
 
     def strip_comments(src)
       # strip c-comments
-      src = src.gsub(/\s*(?:(?:\/\*)(?:(?:(?!\*\/)[\s\S])*)(?:\*\/))/, '')
+      src = src.gsub(%r%\s*/\*.*?\*/%m, '')
       # strip cpp-comments
-      src.gsub!(/\s*(?:\/\*(?:(?!\*\/)[\s\S])*\*\/|\/\/[^\n]*\n)/, '')
+      src = src.gsub(%r%^\s*//.*?\n%, '')
+      src = src.gsub(%r%[ \t]*//[^\n]*%, '')
       src
     end
     
