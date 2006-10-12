@@ -6,6 +6,7 @@ require 'hoe'
 require './inline.rb'
 
 Hoe.new("RubyInline", Inline::VERSION) do |p|
+  p.rubyforge_name = "rubyinline"
   p.summary = "Multi-language extension coding within ruby."
   p.description = p.paragraphs_of("README.txt", 3).join
   p.clean_globs << File.expand_path("~/.ruby_inline")
