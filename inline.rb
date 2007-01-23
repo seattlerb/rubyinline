@@ -19,9 +19,9 @@
 #       }
 #     end
 #   end
-# 
+#
 # = DESCRIPTION
-# 
+#
 # Inline allows you to write foreign code within your ruby code. It
 # automatically determines if the code in question has changed and
 # builds it only when necessary. The extensions are then automatically
@@ -52,7 +52,7 @@ class CompilationError < RuntimeError; end
 
 module Inline
   VERSION = '3.6.2'
-  
+
   WINDOZE  = /win32/ =~ RUBY_PLATFORM
   DEV_NULL = (WINDOZE ? 'nul' : '/dev/null')
   RAKE     = (WINDOZE ? 'rake.cmd' : 'rake')
@@ -84,8 +84,8 @@ module Inline
     directory = File.join(rootdir, ".ruby_inline")
     unless defined? @@directory and directory == @@directory and test ?d, @@directory then
       unless File.directory? directory then
-	$stderr.puts "NOTE: creating #{directory} for RubyInline" if $DEBUG
-	Dir.mkdir directory, 0700
+        $stderr.puts "NOTE: creating #{directory} for RubyInline" if $DEBUG
+        Dir.mkdir directory, 0700
       end
       Dir.assert_secure directory
       @@directory = directory
@@ -97,8 +97,8 @@ module Inline
   # Inline. It can be used as a template to write builders for other
   # languages. It understands type-conversions for the basic types and
   # can be extended as needed.
-  
-  class C 
+
+  class C
 
     protected unless $TESTING
 
@@ -137,7 +137,7 @@ module Inline
       src = src.gsub(%r%[ \t]*//[^\n]*%, '')
       src
     end
-    
+
     def parse_signature(src, raw=false)
 
       sig = self.strip_comments(src)
@@ -153,29 +153,29 @@ module Inline
       end
 
       if /(#{@types})\s*(\w+)\s*\(([^)]*)\)/ =~ sig then
-	return_type, function_name, arg_string = $1, $2, $3
-	args = []
-	arg_string.split(',').each do |arg|
+        return_type, function_name, arg_string = $1, $2, $3
+        args = []
+        arg_string.split(',').each do |arg|
 
-	  # helps normalize into 'char * varname' form
-	  arg = arg.gsub(/\s*\*\s*/, ' * ').strip
+          # helps normalize into 'char * varname' form
+          arg = arg.gsub(/\s*\*\s*/, ' * ').strip
 
-	  if /(((#{@types})\s*\*?)+)\s+(\w+)\s*$/ =~ arg then
-	    args.push([$4, $1])
-	  elsif arg != "void" then
-	    $stderr.puts "WARNING: '#{arg}' not understood"
-	  end
-	end
+          if /(((#{@types})\s*\*?)+)\s+(\w+)\s*$/ =~ arg then
+            args.push([$4, $1])
+          elsif arg != "void" then
+            $stderr.puts "WARNING: '#{arg}' not understood"
+          end
+        end
 
-	arity = args.size
-	arity = MAGIC_ARITY if raw
+        arity = args.size
+        arity = MAGIC_ARITY if raw
 
-	return {
-	  'return' => return_type,
-	    'name' => function_name,
-	    'args' => args,
-	   'arity' => arity
-	}
+        return {
+          'return' => return_type,
+            'name' => function_name,
+            'args' => args,
+           'arity' => arity
+        }
       end
 
       raise SyntaxError, "Can't parse signature: #{sig}"
@@ -196,34 +196,34 @@ module Inline
       raise ArgumentError, "too many arguments" if arity > MAGIC_ARITY_THRESHOLD
 
       if expand_types then
-	prefix = "static VALUE #{function_name}("
-	if arity == MAGIC_ARITY then
-	  prefix += "int argc, VALUE *argv, VALUE self"
-	else
-	  prefix += "VALUE self"
+        prefix = "static VALUE #{function_name}("
+        if arity == MAGIC_ARITY then
+          prefix += "int argc, VALUE *argv, VALUE self"
+        else
+          prefix += "VALUE self"
           prefix += signature['args'].map { |arg, type| ", VALUE _#{arg}"}.join
-	end
-	prefix += ") {\n"
+        end
+        prefix += ") {\n"
         prefix += signature['args'].map { |arg, type|
           "  #{type} #{arg} = #{ruby2c(type)}(_#{arg});\n"
         }.join
 
-	# replace the function signature (hopefully) with new sig (prefix)
-	result.sub!(/[^;\/\"\>]+#{function_name}\s*\([^\{]+\{/, "\n" + prefix)
-	result.sub!(/\A\n/, '') # strip off the \n in front in case we added it
-	unless return_type == "void" then
-	  raise SyntaxError, "Couldn't find return statement for #{function_name}" unless 
-	    result =~ /return/ 
-	  result.gsub!(/return\s+([^\;\}]+)/) do
-	    "return #{c2ruby(return_type)}(#{$1})"
-	  end
-	else
-	  result.sub!(/\s*\}\s*\Z/, "\nreturn Qnil;\n}")
-	end
+        # replace the function signature (hopefully) with new sig (prefix)
+        result.sub!(/[^;\/\"\>]+#{function_name}\s*\([^\{]+\{/, "\n" + prefix)
+        result.sub!(/\A\n/, '') # strip off the \n in front in case we added it
+        unless return_type == "void" then
+          raise SyntaxError, "Couldn't find return statement for #{function_name}" unless
+            result =~ /return/
+          result.gsub!(/return\s+([^\;\}]+)/) do
+            "return #{c2ruby(return_type)}(#{$1})"
+          end
+        else
+          result.sub!(/\s*\}\s*\Z/, "\nreturn Qnil;\n}")
+        end
       else
-	prefix = "static #{return_type} #{function_name}("
-	result.sub!(/[^;\/\"\>]+#{function_name}\s*\(/, prefix)
-	result.sub!(/\A\n/, '') # strip off the \n in front in case we added it
+        prefix = "static #{return_type} #{function_name}("
+        result.sub!(/[^;\/\"\>]+#{function_name}\s*\(/, prefix)
+        result.sub!(/\A\n/, '') # strip off the \n in front in case we added it
       end
 
       delta = if result =~ /\A(static.*?\{)/m then
@@ -313,21 +313,21 @@ module Inline
       so_name = self.so_name
       so_exists = File.file? so_name
       unless so_exists and File.mtime(rb_file) < File.mtime(so_name)
-	
-	src_name = "#{Inline.directory}/#{module_name}.c"
-	old_src_name = "#{src_name}.old"
-	should_compare = File.write_with_backup(src_name) do |io|
-	  io.puts
-	  io.puts "#include \"ruby.h\""
-	  io.puts
-	  io.puts @src.join("\n\n")
-	  io.puts
-	  io.puts
-	  io.puts "#ifdef __cplusplus"
-	  io.puts "extern \"C\" {"
-	  io.puts "#endif"
+
+        src_name = "#{Inline.directory}/#{module_name}.c"
+        old_src_name = "#{src_name}.old"
+        should_compare = File.write_with_backup(src_name) do |io|
+          io.puts
+          io.puts "#include \"ruby.h\""
+          io.puts
+          io.puts @src.join("\n\n")
+          io.puts
+          io.puts
+          io.puts "#ifdef __cplusplus"
+          io.puts "extern \"C\" {"
+          io.puts "#endif"
           io.puts "  __declspec(dllexport)" if WINDOZE
-	  io.puts "  void Init_#{module_name}() {"
+          io.puts "  void Init_#{module_name}() {"
           io.puts "    VALUE c = rb_cObject;"
 
           # TODO: use rb_class2path
@@ -335,58 +335,58 @@ module Inline
             "    c = rb_const_get_at(c,rb_intern(\"#{n}\"));"
           }.join("\n")
 
-	  @sig.keys.sort.each do |name|
-	    arity, singleton = @sig[name]
+          @sig.keys.sort.each do |name|
+            arity, singleton = @sig[name]
             if singleton then
               io.print "    rb_define_singleton_method(c, \"#{name}\", "
             else
-	      io.print "    rb_define_method(c, \"#{name}\", "
+              io.print "    rb_define_method(c, \"#{name}\", "
             end
-	    io.puts  "(VALUE(*)(ANYARGS))#{name}, #{arity});"
-	  end
+            io.puts  "(VALUE(*)(ANYARGS))#{name}, #{arity});"
+          end
 
           io.puts @init_extra.join("\n") unless @init_extra.empty?
 
-	  io.puts
-	  io.puts "  }"
-	  io.puts "#ifdef __cplusplus"
-	  io.puts "}"
-	  io.puts "#endif"
-	  io.puts
-	end
+          io.puts
+          io.puts "  }"
+          io.puts "#ifdef __cplusplus"
+          io.puts "}"
+          io.puts "#endif"
+          io.puts
+        end
 
-	# recompile only if the files are different
-	recompile = true
-	if so_exists and should_compare and
+        # recompile only if the files are different
+        recompile = true
+        if so_exists and should_compare and
             File::compare(old_src_name, src_name, $DEBUG) then
-	  recompile = false
+          recompile = false
 
-	  # Updates the timestamps on all the generated/compiled files.
-	  # Prevents us from entering this conditional unless the source
-	  # file changes again.
+          # Updates the timestamps on all the generated/compiled files.
+          # Prevents us from entering this conditional unless the source
+          # file changes again.
           t = Time.now
-	  File.utime(t, t, src_name, old_src_name, so_name)
-	end
+          File.utime(t, t, src_name, old_src_name, so_name)
+        end
 
-	if recompile then
+        if recompile then
 
-	  # extracted from mkmf.rb
-	  srcdir  = Config::CONFIG["srcdir"]
-	  archdir = Config::CONFIG["archdir"]
-	  if File.exist? archdir + "/ruby.h" then
-	    hdrdir = archdir
-	  elsif File.exist? srcdir + "/ruby.h" then
-	    hdrdir = srcdir
-	  else
-	    $stderr.puts "ERROR: Can't find header files for ruby. Exiting..."
-	    exit 1
-	  end
+          # extracted from mkmf.rb
+          srcdir  = Config::CONFIG["srcdir"]
+          archdir = Config::CONFIG["archdir"]
+          if File.exist? archdir + "/ruby.h" then
+            hdrdir = archdir
+          elsif File.exist? srcdir + "/ruby.h" then
+            hdrdir = srcdir
+          else
+            $stderr.puts "ERROR: Can't find header files for ruby. Exiting..."
+            exit 1
+          end
 
-	  flags = @flags.join(' ')
-	  libs  = @libs.join(' ')
+          flags = @flags.join(' ')
+          libs  = @libs.join(' ')
 
          cmd = "#{Config::CONFIG['LDSHARED']} #{flags} #{Config::CONFIG['CFLAGS']} -I #{hdrdir} -o \"#{so_name}\" \"#{File.expand_path(src_name)}\" #{libs}"
-	  
+
           # gawd windoze land sucks
           case RUBY_PLATFORM
           when /mswin32/ then
@@ -398,8 +398,8 @@ module Inline
           end
 
           cmd += " 2> #{DEV_NULL}" if $TESTING and not $DEBUG
-	  
-	  $stderr.puts "Building #{so_name} with '#{cmd}'" if $DEBUG
+
+          $stderr.puts "Building #{so_name} with '#{cmd}'" if $DEBUG
           result = `#{cmd}`
           $stderr.puts "Output:\n#{result}" if $DEBUG
           if $? != 0 then
@@ -420,19 +420,19 @@ module Inline
             end
           end
 
-	  $stderr.puts "Built successfully" if $DEBUG
-	end
+          $stderr.puts "Built successfully" if $DEBUG
+        end
 
       else
-	$stderr.puts "#{so_name} is up to date" if $DEBUG
+        $stderr.puts "#{so_name} is up to date" if $DEBUG
       end # unless (file is out of date)
     end # def build
-      
+
     ##
     # Adds compiler options to the compiler command line.  No
     # preprocessing is done, so you must have all your dashes and
     # everything.
-    
+
     def add_compile_flags(*flags)
       @flags.push(*flags)
     end
@@ -440,7 +440,7 @@ module Inline
     ##
     # Adds linker flags to the link command line.  No preprocessing is
     # done, so you must have all your dashes and everything.
-    
+
     def add_link_flags(*flags)
       @libs.push(*flags)
     end
@@ -454,7 +454,7 @@ module Inline
 
     ##
     # Registers C type-casts +r2c+ and +c2r+ for +type+.
-    
+
     def add_type_converter(type, r2c, c2r)
       $stderr.puts "WARNING: overridding #{type} on #{caller[0]}" if @@type_map.has_key? type
       @@type_map[type] = [r2c, c2r]
@@ -463,14 +463,14 @@ module Inline
     ##
     # Adds an include to the top of the file. Don't forget to use
     # quotes or angle brackets.
-    
+
     def include(header)
       @src << "#include #{header}"
     end
 
     ##
     # Adds any amount of text/code to the source
-    
+
     def prefix(code)
       @src << code
     end
@@ -479,30 +479,30 @@ module Inline
     # Adds a C function to the source, including performing automatic
     # type conversion to arguments and the return value. Unknown type
     # conversions can be extended by using +add_type_converter+.
-    
+
     def c src
       self.generate(src,:expand_types=>true)
     end
 
     ##
     # Same as +c+, but adds a class function.
-    
+
     def c_singleton src
       self.generate(src,:expand_types=>true,:singleton=>true)
     end
-    
+
     ##
     # Adds a raw C function to the source. This version does not
     # perform any type conversion and must conform to the ruby/C
     # coding conventions.
-    
+
     def c_raw src
       self.generate(src)
     end
 
     ##
     # Same as +c_raw+, but adds a class function.
-    
+
     def c_raw_singleton src
       self.generate(src, :singleton=>true)
     end
@@ -548,7 +548,7 @@ module Inline
         return
       end
 
-      rakefile = eval RAKEFILE_TEMPLATE 
+      rakefile = eval RAKEFILE_TEMPLATE
 
       STDERR.puts "==> Generating Rakefile" unless $TESTING
       File.open 'Rakefile', 'w' do |fp|
@@ -561,7 +561,7 @@ module Inline
 
       cmd = "#{RAKE} package"
       cmd += "> #{DEV_NULL} 2> #{DEV_NULL}" if $TESTING unless $DEBUG
-      
+
       if system cmd then
         unless $TESTING then
           STDERR.puts
@@ -576,7 +576,7 @@ module Inline
       unless defined? @gem_libs then
         @gem_libs = Dir.glob File.join(@inline_dir, "*.#{@ext}")
         files = Dir.glob(File.join('lib', '*')).select { |f| test ?f, f }
-        
+
         @gem_libs.push(*files)
         @gem_libs.sort!
       end
@@ -599,7 +599,7 @@ class Module
   # Extends the Module class to have an inline method. The default
   # language/builder used is C, but can be specified with the +lang+
   # parameter.
-  
+
   def inline(lang = :C, options={})
     case options
     when TrueClass, FalseClass then
@@ -637,9 +637,9 @@ class File
   ##
   # Equivalent to +File::open+ with an associated block, but moves
   # any existing file with the same name to the side first.
-  
+
   def self.write_with_backup(path) # returns true if file already existed
-    
+
     # move previous version to the side if it exists
     renamed = false
     if test ?f, path then
@@ -662,15 +662,15 @@ class Dir
   # writable permissions. If not, it prints an error and exits. It
   # only works on +POSIX+ systems. Patches for other systems are
   # welcome.
-  
+
   def self.assert_secure(path)
     mode = File.stat(path).mode
     unless ((mode % 01000) & 0022) == 0 then
       if $TESTING then
-	raise SecurityError, "Directory #{path} is insecure"
+        raise SecurityError, "Directory #{path} is insecure"
       else
-	$stderr.puts "#{path} is insecure (#{'%o' % mode}). It may not be group or world writable. Exiting."
-	exit 1
+        $stderr.puts "#{path} is insecure (#{'%o' % mode}). It may not be group or world writable. Exiting."
+        exit 1
       end
     end
   end
