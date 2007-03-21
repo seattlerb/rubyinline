@@ -120,12 +120,12 @@ module Inline
     }
 
     def ruby2c(type)
-      raise ArgumentError, "Unknown type #{type}" unless @@type_map.has_key? type
+      raise ArgumentError, "Unknown type #{type.inspect}" unless @@type_map.has_key? type
       @@type_map[type].first
     end
 
     def c2ruby(type)
-      raise ArgumentError, "Unknown type #{type}" unless @@type_map.has_key? type
+      raise ArgumentError, "Unknown type #{type.inspect}" unless @@type_map.has_key? type
       @@type_map[type].last
     end
 
@@ -163,7 +163,7 @@ module Inline
           if /(((#{@types})\s*\*?)+)\s+(\w+)\s*$/ =~ arg then
             args.push([$4, $1])
           elsif arg != "void" then
-            $stderr.puts "WARNING: '#{arg}' not understood"
+            $stderr.puts "WAR\NING: '#{arg}' not understood"
           end
         end
 
@@ -172,9 +172,9 @@ module Inline
 
         return {
           'return' => return_type,
-            'name' => function_name,
-            'args' => args,
-           'arity' => arity
+          'name'   => function_name,
+          'args'   => args,
+          'arity'  => arity
         }
       end
 
@@ -190,6 +190,7 @@ module Inline
 
       signature = parse_signature(src, !expand_types)
       function_name = signature['name']
+      method_name = options[:method_name] || function_name
       return_type = signature['return']
       arity = signature['arity']
 
@@ -229,7 +230,7 @@ module Inline
       delta = if result =~ /\A(static.*?\{)/m then
                 $1.split(/\n/).size
               else
-                warn "WARNING: Can't find signature in #{result.inspect}\n" unless $TESTING
+                warn "WAR\NING: Can't find signature in #{result.inspect}\n" unless $TESTING
                 0
               end
 
@@ -237,7 +238,7 @@ module Inline
       result = "# line #{line.to_i + delta} \"#{file}\"\n" + result unless $DEBUG and not $TESTING
 
       @src << result
-      @sig[function_name] = [arity,singleton]
+      @sig[function_name] = [arity,singleton,method_name]
 
       return result if $TESTING
     end # def generate
@@ -291,7 +292,7 @@ module Inline
         file = File.join("inline", File.basename(so_name))
         if require file then
           dir = Inline.directory
-          warn "WARNING: #{dir} exists but is not being used" if test ?d, dir
+          warn "WAR\NING: #{dir} exists but is not being used" if test ?d, dir
           return true
         end
       rescue LoadError
@@ -336,15 +337,14 @@ module Inline
           }.join("\n")
 
           @sig.keys.sort.each do |name|
-            arity, singleton = @sig[name]
+            arity, singleton, method_name = @sig[name]
             if singleton then
-              io.print "    rb_define_singleton_method(c, \"#{name}\", "
+              io.print "    rb_define_singleton_method(c, \"#{method_name}\", "
             else
-              io.print "    rb_define_method(c, \"#{name}\", "
+              io.print "    rb_define_method(c, \"#{method_name}\", "
             end
             io.puts  "(VALUE(*)(ANYARGS))#{name}, #{arity});"
           end
-
           io.puts @init_extra.join("\n") unless @init_extra.empty?
 
           io.puts
@@ -370,33 +370,16 @@ module Inline
 
         if recompile then
 
-          # extracted from mkmf.rb
-          srcdir  = Config::CONFIG["srcdir"]
-          archdir = Config::CONFIG["archdir"]
-          if File.exist? archdir + "/ruby.h" then
-            hdrdir = archdir
-          elsif File.exist? srcdir + "/ruby.h" then
-            hdrdir = srcdir
-          else
-            $stderr.puts "ERROR: Can't find header files for ruby. Exiting..."
-            exit 1
-          end
+          hdrdir = %w(srcdir archdir).map { |name|
+            dir = Config::CONFIG[name]
+          }.find { |dir|
+            dir and File.exist? File.join(dir, "/ruby.h")
+          } or abort "ERROR: Can't find header dir for ruby. Exiting..."
 
           flags = @flags.join(' ')
           libs  = @libs.join(' ')
 
-         cmd = "#{Config::CONFIG['LDSHARED']} #{flags} #{Config::CONFIG['CFLAGS']} -I #{hdrdir} -o \"#{so_name}\" \"#{File.expand_path(src_name)}\" #{libs}"
-
-          # gawd windoze land sucks
-          case RUBY_PLATFORM
-          when /mswin32/ then
-            cmd += " -link /LIBPATH:\"#{Config::CONFIG['libdir']}\" /DEFAULTLIB:\"#{Config::CONFIG['LIBRUBY']}\" /INCREMENTAL:no /EXPORT:Init_#{module_name}"
-          when /mingw32/ then
-            cmd += " -Wl,--enable-auto-import -L#{Config::CONFIG['libdir']} -lmsvcrt-ruby18"
-          when /i386-cygwin/ then
-            cmd += ' -L/usr/local/lib -lruby.dll'
-          end
-
+          cmd = "#{Config::CONFIG['LDSHARED']} #{flags} #{Config::CONFIG['CFLAGS']} -I #{hdrdir} -I #{Config::CONFIG['includedir']} -o \"#{so_name}\" \"#{File.expand_path(src_name)}\" #{libs}" + crap_for_windoze
           cmd += " 2> #{DEV_NULL}" if $TESTING and not $DEBUG
 
           $stderr.puts "Building #{so_name} with '#{cmd}'" if $DEBUG
@@ -429,6 +412,23 @@ module Inline
     end # def build
 
     ##
+    # Returns extra compilation flags for windoze platforms. Ugh.
+
+    def crap_for_windoze
+      # gawd windoze land sucks
+      case RUBY_PLATFORM
+      when /mswin32/ then
+        " -link /LIBPATH:\"#{Config::CONFIG['libdir']}\" /DEFAULTLIB:\"#{Config::CONFIG['LIBRUBY']}\" /INCREMENTAL:no /EXPORT:Init_#{module_name}"
+      when /mingw32/ then
+        " -Wl,--enable-auto-import -L#{Config::CONFIG['libdir']} -lmsvcrt-ruby18"
+      when /i386-cygwin/ then
+        ' -L/usr/local/lib -lruby.dll'
+      else
+        ''
+      end
+    end
+
+    ##
     # Adds compiler options to the compiler command line.  No
     # preprocessing is done, so you must have all your dashes and
     # everything.
@@ -456,8 +456,29 @@ module Inline
     # Registers C type-casts +r2c+ and +c2r+ for +type+.
 
     def add_type_converter(type, r2c, c2r)
-      $stderr.puts "WARNING: overridding #{type} on #{caller[0]}" if @@type_map.has_key? type
+      $stderr.puts "WAR\NING: overridding #{type} on #{caller[0]}" if @@type_map.has_key? type
       @@type_map[type] = [r2c, c2r]
+    end
+
+    ##
+    # Maps a ruby constant to C (with the same name)
+
+    def map_ruby_const(*names)
+      names.each do |name|
+        self.prefix "static VALUE #{name};"
+        self.add_to_init "    #{name} = rb_const_get(c, rb_intern(#{name.to_s.inspect}));"
+      end
+    end
+
+    ##
+    # Maps a C constant to ruby (with the same
+    # name). +names_and_types+ is a hash that maps the name of the
+    # constant to its C type.
+
+    def map_c_const(names_and_types)
+      names_and_types.each do |name, typ|
+        self.add_to_init "    rb_define_const(c, #{name.to_s.inspect}, #{c2ruby(typ.to_s)}(#{name}));"
+      end
     end
 
     ##
@@ -477,38 +498,49 @@ module Inline
 
     ##
     # Adds a C function to the source, including performing automatic
-    # type conversion to arguments and the return value. Unknown type
-    # conversions can be extended by using +add_type_converter+.
+    # type conversion to arguments and the return value. The Ruby
+    # method name can be overridden by providing method_name. Unknown
+    # type conversions can be extended by using +add_type_converter+.
 
-    def c src
-      self.generate(src,:expand_types=>true)
+    def c src, options = {}
+      options = {
+        :expand_types => true,
+      }.merge options
+      self.generate src, options
     end
 
     ##
     # Same as +c+, but adds a class function.
 
-    def c_singleton src
-      self.generate(src,:expand_types=>true,:singleton=>true)
+    def c_singleton src, options = {}
+      options = {
+        :expand_types => true,
+        :singleton    => true,
+      }.merge options
+      self.generate src, options
     end
 
     ##
     # Adds a raw C function to the source. This version does not
     # perform any type conversion and must conform to the ruby/C
-    # coding conventions.
+    # coding conventions.  The Ruby method name can be overridden
+    # by providing method_name.
 
-    def c_raw src
-      self.generate(src)
+    def c_raw src, options = {}
+      self.generate src, options
     end
 
     ##
     # Same as +c_raw+, but adds a class function.
 
-    def c_raw_singleton src
-      self.generate(src, :singleton=>true)
+    def c_raw_singleton src, options = {}
+      options = {
+        :singleton => true,
+      }.merge options
+      self.generate src, options
     end
 
   end # class Inline::C
-
   class Packager
     attr_accessor :name, :version, :summary, :libs_copied, :inline_dir
 

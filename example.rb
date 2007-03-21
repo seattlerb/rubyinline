@@ -30,45 +30,53 @@ class MyTest
   end
 end
 
-t = MyTest.new()
-
-arg = ARGV.shift || 0
-arg = arg.to_i
-
 # breakeven for build run vs native doing 5 factorial:
 #   on a PIII/750 running FreeBSD:        about 5000
 #   on a PPC/G4/800 running Mac OSX 10.2: always faster
-max = ARGV.shift || 1000000
-max = max.to_i
 
+require 'benchmark'
 puts "RubyInline #{Inline::VERSION}" if $DEBUG
 
 MyTest.send(:alias_method, :factorial_alias, :factorial_c_raw)
 
-def validate(n)
-  if n != 120 then puts "ACK! - #{n}"; end
+t = MyTest.new()
+max = (ARGV.shift || 1_000_000).to_i
+n   = (ARGV.shift || 5).to_i
+m   = t.factorial(n)
+
+def validate(n, m)
+  if n != m then raise "#{n} != #{m}"; end
 end
 
-tstart = Time.now
-case arg
-when 0 then
-  type = "Inline C "
-  (1..max).each { |m| n = t.factorial_c(5);     validate(n); }
-when 1 then
-  type = "InlineRaw"
-  (1..max).each { |m| n = t.factorial_c_raw(5); validate(n); }
-when 2 then
-  type = "Alias    "
-  (1..max).each { |m| n = t.factorial_alias(5); validate(n); }
-when 3 then
-  type = "Native   "
-  (1..max).each { |m| n = t.factorial(5);       validate(n); }
-else
-  $stderr.puts "ERROR: argument #{arg} not recognized"
-  exit(1)
-end
-tend = Time.now
+puts "# of iterations = #{max}, n = #{n}"
+Benchmark::bm(20) do |x|
+  x.report("null_time") do
+    for i in 0..max do
+      # do nothing
+    end
+  end
 
-total = tend - tstart
-avg = total / max
-printf "Type = #{type}, Iter = #{max}, T = %.8f sec, %.8f sec / iter\n", total, avg
+  x.report("c") do
+    for i in 0..max do
+      validate(t.factorial_c(n), m)
+    end
+  end
+
+  x.report("c-raw") do
+    for i in 0..max do
+      validate(t.factorial_c_raw(n), m)
+    end
+  end
+
+  x.report("c-alias") do
+    for i in 0..max do
+      validate(t.factorial_alias(n), m)
+    end
+  end
+
+  x.report("pure ruby") do
+    for i in 0..max do
+      validate(t.factorial(n), m)
+    end
+  end
+end

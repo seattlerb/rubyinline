@@ -30,7 +30,7 @@ class InlineTestCase < Test::Unit::TestCase
 
   def teardown
     unless $DEBUG then
-      FileUtils.rm_rf @rootdir 
+      FileUtils.rm_rf @rootdir
       ENV.delete 'INLINEDIR'
     end
   end
@@ -178,7 +178,7 @@ class TestC < InlineTestCase
 
     @builder.add_type_converter t, a, b unless t.nil?
     result = @builder.parse_signature(src)
-    
+
     assert_equal(expected, result)
   end
 
@@ -198,16 +198,16 @@ class TestC < InlineTestCase
       'return' => 'int',
       'arity' => 2,
       'args' => [
-	['x', 'int'],
-	['y', 'int']
+    ['x', 'int'],
+    ['y', 'int']
       ]
     }
-    
+
     util_parse_signature(src, expected)
   end
-  
+
   def test_parse_signature_custom
-    
+
     src = "// stupid cpp comment
     #include \"header.h\"
     /* stupid c comment */
@@ -217,19 +217,19 @@ class TestC < InlineTestCase
       return result;
     }
     "
-    
+
     expected = {
       'name' => 'add',
       'return' => 'int',
       'arity' => 2,
       'args' => [
-	[ 'x', 'fooby' ],
-	['y', 'int']
+    [ 'x', 'fooby' ],
+    ['y', 'int']
       ]
     }
-    
+
     util_parse_signature(src, expected,
-			 "fooby", "r2c_fooby", "c2r_fooby") 
+             "fooby", "r2c_fooby", "c2r_fooby")
   end
 
   def test_parse_signature_register
@@ -249,14 +249,14 @@ class TestC < InlineTestCase
       'return' => 'int',
       'arity' => 2,
       'args' => [
-	[ 'x', 'register int' ],
-	['y', 'int']
+    [ 'x', 'register int' ],
+    ['y', 'int']
       ]
     }
 
-    
+
     util_parse_signature(src, expected,
-			 "register int", 'FIX2INT', 'INT2FIX')
+             "register int", 'FIX2INT', 'INT2FIX')
   end
 
   def util_generate(src, expected, expand_types=true)
@@ -532,7 +532,7 @@ puts(s); return rb_str_new2(s)}"
 
   def test_build_bad
     code = util_simple_code(:DumbTest2, "void should_puke() { 1+1  2+2 }")
-    assert_raises(CompilationError) do 
+    assert_raises(CompilationError) do
       util_test_build(code) do
         flunk
       end
@@ -650,7 +650,7 @@ class TestModule < InlineTestCase
 
   def test_argument_check_fewer
     fb = Foo::Bar.new
-    
+
     assert_raise(ArgumentError) do
       assert_equal 13, fb.arity6(1, 2, 3)
     end
@@ -668,12 +668,12 @@ class TestModule < InlineTestCase
       builder.c "int add(int a, int b) { return a + b; }"
     end
     assert(test(?d, Inline.directory),
-	   "inline dir should have been created")
+       "inline dir should have been created")
     matches = Dir[File.join(Inline.directory, "Inline_TestModule_*.c")]
     assert_equal(1, matches.length, "Source should have been created")
     library_file = matches.first.gsub(/\.c$/) { "." + Config::CONFIG["DLEXT"] }
     assert(test(?f, library_file),
-	   "Library file should have been created")
+       "Library file should have been created")
   end
 
 end
@@ -721,7 +721,7 @@ class TestInlinePackager < InlineTestCase
       @packager.package
     end
   end
-  
+
   def test_copy_libs
     assert_equal false, @packager.libs_copied
 
@@ -744,7 +744,7 @@ class TestInlinePackager < InlineTestCase
   def test_generate_rakefile_has_rakefile
     FileUtils.rm 'Rakefile' if test ?f, 'Rakefile' and $DEBUG
     FileUtils.touch 'Rakefile'
-    
+
     @packager.generate_rakefile
 
     assert_equal "", File.read('Rakefile')
