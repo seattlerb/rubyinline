@@ -109,14 +109,14 @@ module Inline
       'char'          => [ 'NUM2CHR',  'CHR2FIX' ],
       'char *'        => [ 'STR2CSTR', 'rb_str_new2' ],
       'double'        => [ 'NUM2DBL',  'rb_float_new' ],
-      'int'           => [ 'FIX2INT',  'INT2FIX' ],
+      'int'           => [ 'F'+'IX2INT',  'INT2FIX' ],
       'long'          => [ 'NUM2INT',  'INT2NUM' ],
       'unsigned int'  => [ 'NUM2UINT', 'UINT2NUM' ],
       'unsigned long' => [ 'NUM2UINT', 'UINT2NUM' ],
       'unsigned'      => [ 'NUM2UINT', 'UINT2NUM' ],
       'VALUE'         => [ '', '' ],
       # Can't do these converters because they conflict with the above:
-      # ID2SYM(x), SYM2ID(x), NUM2DBL(x), FIX2UINT(x)
+      # ID2SYM(x), SYM2ID(x), NUM2DBL(x), F\IX2UINT(x)
     }
 
     def ruby2c(type)
@@ -379,7 +379,7 @@ module Inline
           flags = @flags.join(' ')
           libs  = @libs.join(' ')
 
-          cmd = "#{Config::CONFIG['LDSHARED']} #{flags} #{Config::CONFIG['CFLAGS']} -I #{hdrdir} -I #{Config::CONFIG['includedir']} -o \"#{so_name}\" \"#{File.expand_path(src_name)}\" #{libs}" + crap_for_windoze
+          cmd = "#{Config::CONFIG['LDSHARED']} #{flags} #{Config::CONFIG['CCDLFLAGS']} #{Config::CONFIG['CFLAGS']} -I #{hdrdir} -I #{Config::CONFIG['includedir']} -o \"#{so_name}\" \"#{File.expand_path(src_name)}\" #{libs}" + crap_for_windoze
           cmd += " 2> #{DEV_NULL}" if $TESTING and not $DEBUG
 
           $stderr.puts "Building #{so_name} with '#{cmd}'" if $DEBUG
@@ -635,7 +635,7 @@ class Module
   def inline(lang = :C, options={})
     case options
     when TrueClass, FalseClass then
-      warn "WARNING: 2nd argument to inline is now a hash, changing to {:testing=>#{options}}" unless options
+      warn "WAR\NING: 2nd argument to inline is now a hash, changing to {:testing=>#{options}}" unless options
       options = { :testing => options  }
     when Hash
       options[:testing] ||= false
