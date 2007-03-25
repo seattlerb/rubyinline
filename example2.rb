@@ -1,6 +1,11 @@
 #!/usr/local/bin/ruby17 -w
 
-require "inline"
+begin
+  require 'rubygems'
+rescue LoadError
+  $: << 'lib'
+end
+require 'inline'
 
 class MyTest
 

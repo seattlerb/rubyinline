@@ -1,6 +1,10 @@
 #!/usr/local/bin/ruby -w
 
-begin require 'rubygems' rescue LoadError end
+begin
+  require 'rubygems'
+rescue LoadError
+  $: << 'lib'
+end
 require 'inline'
 
 class MyTest
