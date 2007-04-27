@@ -1,6 +1,20 @@
+*** 3.6.3 / 2007-04-27
+
++ 7 minor enhancements:
+	Added map_ruby_const and map_c_const to C builder.
+	Converted example.rb to a real benchmark setup.
+	Improved error messages.
+	Added options hash for all C builder methods.
+	Options hash can take optional :method_name param to have ruby name diff from c.
+	Converted to a more traditional setup. Now I can heckle!
+	Cleaned up ruby.h search.
++ 2 bug fixes:
+    Added CCDLFLAGS. _Should_ pick up -fPIC on misconfigured 64 bit machines.
+	Broke up all warnings so progress report was cleaner.
+
 *** 3.6.2 / 2006-10-12
 
-+ 2 bug fixes
++ 2 bug fixes:
 	+ comment stripper much more sane to fix problems on certain linux distros
 	+ fixed a nit with older C compilers.
 
