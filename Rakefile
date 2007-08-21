@@ -6,8 +6,8 @@ require 'hoe'
 require './lib/inline.rb'
 
 Hoe.new("RubyInline", Inline::VERSION) do |p|
-  p.summary = "Multi-language extension coding within ruby."
   p.description = p.paragraphs_of("README.txt", 3).join
+  p.summary = p.description[/\A([^.]+\.){2}/]
   p.url = p.paragraphs_of("README.txt", 1).join
   p.changes = p.paragraphs_of("History.txt", 0..1).join
   p.clean_globs << File.expand_path("~/.ruby_inline")

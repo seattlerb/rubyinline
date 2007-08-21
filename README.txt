@@ -11,9 +11,8 @@ directly. By writing simple builder classes, you can teach how to cope
 with new languages (fortran, perl, whatever). The code is compiled and
 run on the fly when needed.
 
-Using the package_inline tool Inline now allows you to package up
-your inlined object code for distribution to systems without a
-compiler (read: windows)!
+Using the package_inline tool Inline allows you to package up your
+inlined object code for distribution to systems without a compiler.
 
 ** FEATURES/PROBLEMS:
 
@@ -110,7 +109,7 @@ compiler (read: windows)!
 
 (The MIT License)
 
-Copyright (c) 2001-2005 Ryan Davis, Zen Spider Software
+Copyright (c) 2001-2007 Ryan Davis, Zen Spider Software
 
 Permission is hereby granted, free of charge, to any person obtaining
 a copy of this software and associated documentation files (the
