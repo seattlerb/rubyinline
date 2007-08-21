@@ -278,10 +278,12 @@ module Inline
 
       @mod = mod
       @src = []
+      @inc = []
       @sig = {}
       @flags = []
       @libs = []
       @init_extra = []
+      @include_ruby_first = true
     end
 
     ##
@@ -318,8 +320,14 @@ module Inline
         src_name = "#{Inline.directory}/#{module_name}.c"
         old_src_name = "#{src_name}.old"
         should_compare = File.write_with_backup(src_name) do |io|
+          if @include_ruby_first
+            @inc.unshift "#include \"ruby.h\""
+          else
+            @inc.push "#include \"ruby.h\""
+          end
+
           io.puts
-          io.puts "#include \"ruby.h\""
+          io.puts @inc.join("\n")
           io.puts
           io.puts @src.join("\n\n")
           io.puts
@@ -392,7 +400,7 @@ module Inline
           end
 
           if WINDOZE then
-            Dir.chdir self.directory do
+            Dir.chdir Inline.directory do
               cmd = "mt /manifest lib.so.manifest /outputresource:so.dll;#2"
               $stderr.puts "Embedding manifest with '#{cmd}'" if $DEBUG
               result = `#{cmd}`
@@ -486,7 +494,15 @@ module Inline
     # quotes or angle brackets.
 
     def include(header)
-      @src << "#include #{header}"
+      @inc << "#include #{header}"
+    end
+
+    ##
+    # Specifies that the the ruby.h header should be included *after* custom
+    # header(s) instead of before them.
+
+    def include_ruby_last
+      @include_ruby_first = false
     end
 
     ##
@@ -701,8 +717,7 @@ class Dir
       if $TESTING then
         raise SecurityError, "Directory #{path} is insecure"
       else
-        $stderr.puts "#{path} is insecure (#{'%o' % mode}). It may not be group or world writable. Exiting."
-        exit 1
+        abort "#{path} is insecure (#{'%o' % mode}). It may not be group or world writable. Exiting."
       end
     end
   end
