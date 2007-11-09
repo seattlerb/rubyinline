@@ -51,7 +51,7 @@ class CompilationError < RuntimeError; end
 # the current namespace.
 
 module Inline
-  VERSION = '3.6.4'
+  VERSION = '3.6.5'
 
   WINDOZE  = /win32/ =~ RUBY_PLATFORM
   DEV_NULL = (WINDOZE ? 'nul' : '/dev/null')
@@ -388,6 +388,9 @@ module Inline
           libs  = @libs.join(' ')
 
           cmd = "#{Config::CONFIG['LDSHARED']} #{flags} #{Config::CONFIG['CCDLFLAGS']} #{Config::CONFIG['CFLAGS']} -I #{hdrdir} -I #{Config::CONFIG['includedir']} -o \"#{so_name}\" \"#{File.expand_path(src_name)}\" #{libs}" + crap_for_windoze
+          # TODO: remove after osx 10.5.2
+          cmd += ' -flat_namespace -undefined suppress' if
+            RUBY_PLATFORM =~ /darwin9\.[01]/
           cmd += " 2> #{DEV_NULL}" if $TESTING and not $DEBUG
 
           $stderr.puts "Building #{so_name} with '#{cmd}'" if $DEBUG

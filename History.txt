@@ -1,3 +1,8 @@
+### 3.6.5 / 2007-11-08
+
+* 1 minor enhancement:
+  * Quick fix for OSX 10.5 native ruby (should be fixed in 10.5.2).
+
 ### 3.6.4 / 2007-08-20
 
 * 1 minor enhancement:
