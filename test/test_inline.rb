@@ -6,6 +6,7 @@ require 'inline'
 require 'tempfile'
 require 'tmpdir'
 require 'test/unit'
+require 'fileutils' unless defined?(::FileUtils)
 
 File.umask(0)
 
@@ -636,11 +637,14 @@ class TestModule < InlineTestCase
     tempfile.write($test_module_code2)
     tempfile.flush
     tempfile.rewind
-    `cp #{tempfile.path} #{tempfile.path}.rb`
+    
+    FileUtils.cp tempfile.path, "#{tempfile.path}.rb"
+    
     require "#{tempfile.path}.rb"
     assert_equal(12, fb.twelve_instance)
     assert_equal(12, Foo::Bar.twelve_class)
-    `rm "#{tempfile.path}.rb"`
+    
+    FileUtils.rm "#{tempfile.path}.rb"
   end
 
   def test_argument_check_good

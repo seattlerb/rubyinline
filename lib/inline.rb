@@ -51,12 +51,12 @@ class CompilationError < RuntimeError; end
 # the current namespace.
 
 module Inline
-  VERSION = '3.6.5'
+  VERSION = '3.6.6'
 
-  WINDOZE  = /win32/ =~ RUBY_PLATFORM
-  DEV_NULL = (WINDOZE ? 'nul' : '/dev/null')
-  RAKE     = (WINDOZE ? 'rake.cmd' : 'rake')
-  GEM      = (WINDOZE ? 'gem.cmd'  : 'gem')
+  WINDOZE  = /win(32|64)/ =~ RUBY_PLATFORM
+  DEV_NULL = (WINDOZE ? 'nul'      : '/dev/null')
+  RAKE     = (WINDOZE ? 'rake.bat' : 'rake')
+  GEM      = (WINDOZE ? 'gem.bat'  : 'gem')
 
   $stderr.puts "RubyInline v #{VERSION}" if $DEBUG
 
@@ -64,6 +64,10 @@ module Inline
 
   def self.rootdir
     env = ENV['INLINEDIR'] || ENV['HOME']
+
+    # in case both INLINEDIR and HOME aren't defined, and under Windows
+    # default to HOMEDRIVE + HOMEPATH values
+    env = ENV['HOMEDRIVE'] + ENV['HOMEPATH'] if env.nil? and WINDOZE
 
     if env.nil? then
       $stderr.puts "Define INLINEDIR or HOME in your environment and try again"
@@ -294,7 +298,7 @@ module Inline
         file = File.join("inline", File.basename(so_name))
         if require file then
           dir = Inline.directory
-          warn "WAR\NING: #{dir} exists but is not being used" if test ?d, dir
+          warn "WAR\NING: #{dir} exists but is not being used" if test ?d, dir and $VERBOSE
           return true
         end
       rescue LoadError
@@ -402,7 +406,11 @@ module Inline
             raise CompilationError, "error executing #{cmd}: #{$?}\nRenamed #{src_name} to #{bad_src_name}"
           end
 
-          if WINDOZE then
+          # NOTE: manifest embedding is only required when using VC8 ruby 
+          # build or compiler.
+          # Errors from this point should be ignored if Config::CONFIG['arch'] 
+          # (RUBY_PLATFORM) matches 'i386-mswin32_80'
+          if WINDOZE and RUBY_PLATFORM =~ /_80$/ then
             Dir.chdir Inline.directory do
               cmd = "mt /manifest lib.so.manifest /outputresource:so.dll;#2"
               $stderr.puts "Embedding manifest with '#{cmd}'" if $DEBUG
