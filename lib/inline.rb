@@ -394,7 +394,13 @@ module Inline
           flags = @flags.join(' ')
           libs  = @libs.join(' ')
 
-          cmd = "#{Config::CONFIG['LDSHARED']} #{flags} #{Config::CONFIG['CCDLFLAGS']} #{Config::CONFIG['CFLAGS']} -I #{hdrdir} -I #{Config::CONFIG['includedir']} -o \"#{so_name}\" \"#{File.expand_path(src_name)}\" #{libs}" + crap_for_windoze
+          config_hdrdir = if RUBY_VERSION > '1.9' then
+                            "-I #{File.join hdrdir, RbConfig::CONFIG['arch']}"
+                          else
+                            nil
+                          end
+
+          cmd = "#{Config::CONFIG['LDSHARED']} #{flags} #{Config::CONFIG['CCDLFLAGS']} #{Config::CONFIG['CFLAGS']} -I #{hdrdir} #{config_hdrdir} -I #{Config::CONFIG['includedir']} -o \"#{so_name}\" \"#{File.expand_path(src_name)}\" #{libs}" + crap_for_windoze
           # TODO: remove after osx 10.5.2
           cmd += ' -flat_namespace -undefined suppress' if
             RUBY_PLATFORM =~ /darwin9\.[01]/
