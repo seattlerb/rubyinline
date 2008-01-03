@@ -37,7 +37,6 @@
 
 require "rbconfig"
 require "digest/md5"
-require 'ftools'
 require 'fileutils'
 
 $TESTING = false unless defined? $TESTING
@@ -265,7 +264,10 @@ module Inline
     end
 
     attr_reader :rb_file, :mod
-    attr_accessor :mod, :src, :sig, :flags, :libs if $TESTING
+    if $TESTING then
+      attr_writer :mod
+      attr_accessor :src, :sig, :flags, :libs
+    end
 
     public
 
@@ -277,8 +279,9 @@ module Inline
       raise "Couldn't discover caller" if stack.empty?
       real_caller = stack.first
       real_caller = stack[3] if real_caller =~ /\(eval\)/
-      @real_caller = real_caller.split(/:/)[0..-2].join(':')
-      @rb_file = File.expand_path(@real_caller)
+      real_caller = real_caller.split(/:/, 3)[0..1]
+      @real_caller = real_caller.join ':'
+      @rb_file = File.expand_path real_caller.first
 
       @mod = mod
       @src = []
@@ -382,7 +385,7 @@ module Inline
 
         if recompile then
 
-          hdrdir = %w(srcdir archdir).map { |name|
+          hdrdir = %w(srcdir archdir rubyhdrdir).map { |name|
             dir = Config::CONFIG[name]
           }.find { |dir|
             dir and File.exist? File.join(dir, "/ruby.h")
