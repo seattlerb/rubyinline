@@ -373,7 +373,7 @@ module Inline
         # recompile only if the files are different
         recompile = true
         if so_exists and should_compare and
-            File::compare(old_src_name, src_name, $DEBUG) then
+            FileUtils.compare_file(old_src_name, src_name) then
           recompile = false
 
           # Updates the timestamps on all the generated/compiled files.
