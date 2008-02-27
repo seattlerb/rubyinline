@@ -27,6 +27,7 @@ class InlineTestCase < Test::Unit::TestCase
     @rootdir = File.join(Dir.tmpdir, "test_inline.#{$$}")
     Dir.mkdir @rootdir, 0700 unless test ?d, @rootdir
     ENV['INLINEDIR'] = @rootdir
+    Dir.mkdir Inline.directory, 0700
   end
 
   def teardown
@@ -57,7 +58,7 @@ class TestDir < InlineTestCase
         Dir.assert_secure path
       end
     else
-      assert_raises(perms.nil? ? Errno::ENOENT : SecurityError) do
+      assert_raises(SecurityError) do
         Dir.assert_secure path
       end
     end
@@ -71,7 +72,7 @@ class TestDir < InlineTestCase
     util_assert_secure 0770, false
     util_assert_secure 0777, false
     # missing
-    util_assert_secure nil, false
+    util_assert_secure nil, true
   end
 end unless Inline::WINDOZE
 

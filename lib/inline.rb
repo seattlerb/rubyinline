@@ -50,14 +50,14 @@ class CompilationError < RuntimeError; end
 # the current namespace.
 
 module Inline
-  VERSION = '3.6.6'
+  VERSION = '3.6.7'
 
   WINDOZE  = /win(32|64)/ =~ RUBY_PLATFORM
   DEV_NULL = (WINDOZE ? 'nul'      : '/dev/null')
   RAKE     = (WINDOZE ? 'rake.bat' : 'rake')
   GEM      = (WINDOZE ? 'gem.bat'  : 'gem')
 
-  $stderr.puts "RubyInline v #{VERSION}" if $DEBUG
+  warn "RubyInline v #{VERSION}" if $DEBUG
 
   protected
 
@@ -69,7 +69,7 @@ module Inline
     env = ENV['HOMEDRIVE'] + ENV['HOMEPATH'] if env.nil? and WINDOZE
 
     if env.nil? then
-      $stderr.puts "Define INLINEDIR or HOME in your environment and try again"
+      warn "Define INLINEDIR or HOME in your environment and try again"
       exit 1
     end
 
@@ -85,14 +85,10 @@ module Inline
 
   def self.directory
     directory = File.join(rootdir, ".ruby_inline")
-    unless defined? @@directory and directory == @@directory and test ?d, @@directory then
-      unless File.directory? directory then
-        $stderr.puts "NOTE: creating #{directory} for RubyInline" if $DEBUG
-        Dir.mkdir directory, 0700
-      end
-      Dir.assert_secure directory
-      @@directory = directory
+    unless defined? @@directory and directory == @@directory
+      @@directory = File.join(self.rootdir, ".ruby_inline")
     end
+    Dir.assert_secure directory
     @@directory
   end
 
@@ -166,7 +162,7 @@ module Inline
           if /(((#{@types})\s*\*?)+)\s+(\w+)\s*$/ =~ arg then
             args.push([$4, $1])
           elsif arg != "void" then
-            $stderr.puts "WAR\NING: '#{arg}' not understood"
+            warn "WAR\NING: '#{arg}' not understood"
           end
         end
 
@@ -322,7 +318,12 @@ module Inline
     def build
       so_name = self.so_name
       so_exists = File.file? so_name
-      unless so_exists and File.mtime(rb_file) < File.mtime(so_name)
+      unless so_exists and File.mtime(rb_file) < File.mtime(so_name) then
+
+        unless File.directory? Inline.directory then
+          warn "NOTE: creating #{Inline.directory} for RubyInline" if $DEBUG
+          Dir.mkdir Inline.directory, 0700
+        end
 
         src_name = "#{Inline.directory}/#{module_name}.c"
         old_src_name = "#{src_name}.old"
@@ -400,42 +401,54 @@ module Inline
                             nil
                           end
 
-          cmd = "#{Config::CONFIG['LDSHARED']} #{flags} #{Config::CONFIG['CCDLFLAGS']} #{Config::CONFIG['CFLAGS']} -I #{hdrdir} #{config_hdrdir} -I #{Config::CONFIG['includedir']} -o \"#{so_name}\" \"#{File.expand_path(src_name)}\" #{libs}" + crap_for_windoze
+          cmd = [ Config::CONFIG['LDSHARED'],
+                  flags,
+                  Config::CONFIG['CCDLFLAGS'],
+                  Config::CONFIG['CFLAGS'],
+                  '-I', hdrdir,
+                  config_hdrdir,
+                  '-I', Config::CONFIG['includedir'],
+                  "-L#{Config::CONFIG['libdir']}",
+                  '-o', so_name.inspect,
+                  File.expand_path(src_name).inspect,
+                  libs,
+                  crap_for_windoze ].join(' ')
+
           # TODO: remove after osx 10.5.2
           cmd += ' -flat_namespace -undefined suppress' if
             RUBY_PLATFORM =~ /darwin9\.[01]/
           cmd += " 2> #{DEV_NULL}" if $TESTING and not $DEBUG
 
-          $stderr.puts "Building #{so_name} with '#{cmd}'" if $DEBUG
+          warn "Building #{so_name} with '#{cmd}'" if $DEBUG
           result = `#{cmd}`
-          $stderr.puts "Output:\n#{result}" if $DEBUG
+          warn "Output:\n#{result}" if $DEBUG
           if $? != 0 then
             bad_src_name = src_name + ".bad"
             File.rename src_name, bad_src_name
             raise CompilationError, "error executing #{cmd}: #{$?}\nRenamed #{src_name} to #{bad_src_name}"
           end
 
-          # NOTE: manifest embedding is only required when using VC8 ruby 
+          # NOTE: manifest embedding is only required when using VC8 ruby
           # build or compiler.
-          # Errors from this point should be ignored if Config::CONFIG['arch'] 
+          # Errors from this point should be ignored if Config::CONFIG['arch']
           # (RUBY_PLATFORM) matches 'i386-mswin32_80'
           if WINDOZE and RUBY_PLATFORM =~ /_80$/ then
             Dir.chdir Inline.directory do
               cmd = "mt /manifest lib.so.manifest /outputresource:so.dll;#2"
-              $stderr.puts "Embedding manifest with '#{cmd}'" if $DEBUG
+              warn "Embedding manifest with '#{cmd}'" if $DEBUG
               result = `#{cmd}`
-              $stderr.puts "Output:\n#{result}" if $DEBUG
+              warn "Output:\n#{result}" if $DEBUG
               if $? != 0 then
                 raise CompilationError, "error executing #{cmd}: #{$?}"
               end
             end
           end
 
-          $stderr.puts "Built successfully" if $DEBUG
+          warn "Built successfully" if $DEBUG
         end
 
       else
-        $stderr.puts "#{so_name} is up to date" if $DEBUG
+        warn "#{so_name} is up to date" if $DEBUG
       end # unless (file is out of date)
     end # def build
 
@@ -484,7 +497,7 @@ module Inline
     # Registers C type-casts +r2c+ and +c2r+ for +type+.
 
     def add_type_converter(type, r2c, c2r)
-      $stderr.puts "WAR\NING: overridding #{type} on #{caller[0]}" if @@type_map.has_key? type
+      warn "WAR\NING: overridding #{type} on #{caller[0]}" if @@type_map.has_key? type
       @@type_map[type] = [r2c, c2r]
     end
 
@@ -726,7 +739,7 @@ end # class File
 class Dir
 
   ##
-  # +assert_secure+ checks to see that +path+ exists and has minimally
+  # +assert_secure+ checks that if a +path+ exists it has minimally
   # writable permissions. If not, it prints an error and exits. It
   # only works on +POSIX+ systems. Patches for other systems are
   # welcome.
@@ -740,5 +753,7 @@ class Dir
         abort "#{path} is insecure (#{'%o' % mode}). It may not be group or world writable. Exiting."
       end
     end
+  rescue Errno::ENOENT
+    # If it ain't there, it's certainly secure
   end
 end

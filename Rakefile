@@ -5,23 +5,25 @@ require 'hoe'
 
 require './lib/inline.rb'
 
-Hoe.new("RubyInline", Inline::VERSION) do |p|
-  p.description = p.paragraphs_of("README.txt", 3).join
-  p.summary = p.description[/\A([^.]+\.){2}/]
-  p.url = p.paragraphs_of("README.txt", 1).join
-  p.changes = p.paragraphs_of("History.txt", 0..1).join
-  p.clean_globs << File.expand_path("~/.ruby_inline")
+Hoe.new("RubyInline", Inline::VERSION) do |inline|
+  inline.developer 'Ryan Davis', 'ryand-ruby@zenspider.com'
 
-  p.spec_extras[:requirements] = "A POSIX environment and a compiler for your language."
+  inline.clean_globs << File.expand_path("~/.ruby_inline")
+  inline.spec_extras[:requirements] =
+    "A POSIX environment and a compiler for your language."
 end
 
+desc "run all examples"
 task :examples do
-  %w(example.rb example2.rb tutorial/example1.rb tutorial/example2.rb).each do |e|
+  %w(example.rb example2.rb
+     tutorial/example1.rb
+     tutorial/example2.rb).each do |e|
     rm_rf '~/.ruby_inline'
     ruby "-Ilib -w #{e}"
   end
 end
 
+desc "run simple benchmarks"
 task :bench do
   verbose(false) do
     ruby "-Ilib ./example.rb"

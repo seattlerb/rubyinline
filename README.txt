@@ -1,9 +1,11 @@
-** Ruby Inline
+= Ruby Inline
 
-    http://rubyforge.org/projects/rubyinline/
-    http://www.zenspider.com/ZSS/Products/RubyInline/
+* http://rubyforge.org/projects/rubyinline/
+* http://rubyinline.rubyforge.org/RubyInline/
+* http://www.zenspider.com/ZSS/Products/RubyInline/
+* mailto:ryand-ruby@zenspider.com
 
-** DESCRIPTION:
+== DESCRIPTION:
 
 Ruby Inline is an analog to Perl's Inline::C. Out of the box, it
 allows you to embed C/++ external module code in your ruby script
@@ -14,7 +16,7 @@ run on the fly when needed.
 Using the package_inline tool Inline allows you to package up your
 inlined object code for distribution to systems without a compiler.
 
-** FEATURES/PROBLEMS:
+== FEATURES/PROBLEMS:
 
 + Quick and easy inlining of your C or C++ code embedded in your ruby script.
 + Extendable to work with other languages.
@@ -26,7 +28,7 @@ inlined object code for distribution to systems without a compiler.
 + Only requires standard ruby libraries, nothing extra to download.
 + Can generate a basic Rakefile and package up built extensions for distribution.
 
-** SYNOPSYS:
+== SYNOPSYS:
 
   require "inline"
   class MyTest
@@ -42,7 +44,7 @@ inlined object code for distribution to systems without a compiler.
   t = MyTest.new()
   factorial_5 = t.factorial(5)
 
-** SYNOPSYS (C++):
+== SYNOPSYS (C++):
 
   require 'inline'
   class MyTest
@@ -60,14 +62,14 @@ inlined object code for distribution to systems without a compiler.
   t = MyTest.new()
   t.hello(3)
 
-** SYNOPSYS (packaging):
+== SYNOPSYS (packaging):
 
   rm -rf ~/.ruby_inline
   make test
   inline_package packagename 1.0.0
   ls lib/inline
 
-** (PSEUDO)BENCHMARKS:
+== (PSEUDO)BENCHMARKS:
 
   > make bench
 
@@ -83,7 +85,7 @@ inlined object code for distribution to systems without a compiler.
   Type = InlineRaw, Iter = 1000000, T = 7.54097200 sec, 0.00000754 sec / iter
   Type = Alias    , Iter = 1000000, T = 7.53654000 sec, 0.00000754 sec / iter
 
-** PROFILING STRATEGY:
+== PROFILING STRATEGY:
 
 0) Always keep a log of your progress and changes.
 1) Run code with 'time' and large dataset.
@@ -92,7 +94,7 @@ inlined object code for distribution to systems without a compiler.
 4) Run new code with 'time' and large dataset. Repeat 2-3 if unsatisfied.
 5) Run final code with 'time' and compare to the first run.
 
-** REQUIREMENTS:
+== REQUIREMENTS:
 
 + Ruby - 1.8.2 has been used on FreeBSD 4.6+ and MacOSX.
 + POSIX compliant system (ie pretty much any UNIX, or Cygwin on MS platforms).
@@ -100,12 +102,12 @@ inlined object code for distribution to systems without a compiler.
 + test::unit for running tests ( http://testunit.talbott.ws/ ).
 + rubygems & rake if you'd like - these are used by inline_package.
 
-** INSTALL:
+== INSTALL:
 
 + make test  (optional)
 + make install
 
-** LICENSE:
+== LICENSE:
 
 (The MIT License)
 
