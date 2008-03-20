@@ -1,3 +1,16 @@
+=== 3.6.7 / 2008-03-20
+
+* 3 minor enhancements:
+
+  * Added ability to work entirely without .ruby_inline dir. Thanks Kevin Clark!
+  * Updated history, readme, and rakefile for new hoe abilities.
+  * Cleaned up some really ugly schlock. Man, compiling sucks!
+
+* 2 bug fixes:
+
+  * Fixes for 1.9.
+  * Add -I for platform-specific header dir (for ruby/config.h).
+
 === 3.6.6 / 2007-12-27
 
 * 1 minor enhancement:
