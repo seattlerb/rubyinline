@@ -680,7 +680,9 @@ class TestModule < InlineTestCase
   end
 
   def util_arity_check
-    unless Foo::Bar.public_instance_methods.include? "arity6" then
+    methods = Foo::Bar.public_instance_methods.map { |s| s.to_s }
+
+    unless methods.include? "arity6" then
       Foo::Bar.inline do |builder|
         builder.include "<string.h>"
         builder.c "int arity6(int u, int v, int w, int x, int y, char * z) { return x + y + strlen(z); }"
