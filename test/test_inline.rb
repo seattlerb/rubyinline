@@ -1,6 +1,6 @@
 $TESTING = true
 
-$0 = __FILE__ if $0 == "-e" # for autotest style execution
+$0 = __FILE__ if $0 =~ /-e|\(eval\)/
 
 require 'inline'
 require 'tempfile'
@@ -9,16 +9,6 @@ require 'test/unit'
 require 'fileutils' unless defined?(::FileUtils)
 
 File.umask(0)
-
-module Foo
-  class Bar
-    inline do |builder|
-      builder.c <<-EOC
-        int arity6(int u, int v, int w, int x, int y, char * z) { return x + y + strlen(z); }
-      EOC
-    end
-  end
-end
 
 class InlineTestCase < Test::Unit::TestCase
 
@@ -591,6 +581,12 @@ puts(s); return rb_str_new2(s)}"
 end # class TestC
 end # class TestInline
 
+module Foo
+  class Bar
+    # inline stuff will go here...
+  end
+end
+
 $test_module_code = <<-EOR
 module Foo
   class Bar
@@ -627,7 +623,6 @@ end
 EOR
 
 class TestModule < InlineTestCase
-
   def test_nested
     Object.class_eval $test_module_code
     fb = Foo::Bar.new
@@ -638,33 +633,36 @@ class TestModule < InlineTestCase
     tempfile.write($test_module_code2)
     tempfile.flush
     tempfile.rewind
-    
+
     FileUtils.cp tempfile.path, "#{tempfile.path}.rb"
-    
+
     require "#{tempfile.path}.rb"
     assert_equal(12, fb.twelve_instance)
     assert_equal(12, Foo::Bar.twelve_class)
-    
+
     FileUtils.rm "#{tempfile.path}.rb"
   end
 
   def test_argument_check_good
+    util_arity_check
     fb = Foo::Bar.new
     assert_equal 13, fb.arity6(1, 2, 3, 4, 5, "blah")
   end
 
   def test_argument_check_fewer
+    util_arity_check
     fb = Foo::Bar.new
 
     assert_raise(ArgumentError) do
-      assert_equal 13, fb.arity6(1, 2, 3)
+      fb.arity6(1, 2, 3)
     end
   end
 
   def test_argument_check_more
+    util_arity_check
     fb = Foo::Bar.new
     assert_raise ArgumentError do
-      assert_equal 13, fb.arity6(1, 2, 3, 4, 5, "blah", :extra)
+      fb.arity6(1, 2, 3, 4, 5, "blah", :extra)
     end
   end
 
@@ -681,10 +679,17 @@ class TestModule < InlineTestCase
        "Library file should have been created")
   end
 
+  def util_arity_check
+    unless Foo::Bar.public_instance_methods.include? "arity6" then
+      Foo::Bar.inline do |builder|
+        builder.include "<string.h>"
+        builder.c "int arity6(int u, int v, int w, int x, int y, char * z) { return x + y + strlen(z); }"
+      end
+    end
+  end
 end
 
 class TestInlinePackager < InlineTestCase
-
   def setup
     super
 
@@ -765,7 +770,12 @@ class TestInlinePackager < InlineTestCase
   end
 
   def test_build_gem
-#    test_copy_libs
+    begin
+      require "rubygems" # let things like rubinius die gracefully
+    rescue LoadError
+      return
+    end
+
     pwd = Dir.pwd
 
     File.open 'Rakefile', 'w' do |fp|

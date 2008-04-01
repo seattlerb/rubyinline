@@ -348,8 +348,9 @@ module Inline
           io.puts "    VALUE c = rb_cObject;"
 
           # TODO: use rb_class2path
+          # io.puts "    VALUE c = rb_path2class(#{@mod.name.inspect});"
           io.puts @mod.name.split("::").map { |n|
-            "    c = rb_const_get_at(c,rb_intern(\"#{n}\"));"
+            "    c = rb_const_get(c,rb_intern(\"#{n}\"));"
           }.join("\n")
 
           @sig.keys.sort.each do |name|
@@ -387,7 +388,7 @@ module Inline
         if recompile then
 
           hdrdir = %w(srcdir archdir rubyhdrdir).map { |name|
-            dir = Config::CONFIG[name]
+            Config::CONFIG[name]
           }.find { |dir|
             dir and File.exist? File.join(dir, "/ruby.h")
           } or abort "ERROR: Can't find header dir for ruby. Exiting..."
@@ -425,7 +426,7 @@ module Inline
           if $? != 0 then
             bad_src_name = src_name + ".bad"
             File.rename src_name, bad_src_name
-            raise CompilationError, "error executing #{cmd}: #{$?}\nRenamed #{src_name} to #{bad_src_name}"
+            raise CompilationError, "error executing #{cmd.inspect}: #{$?}\nRenamed #{src_name} to #{bad_src_name}"
           end
 
           # NOTE: manifest embedding is only required when using VC8 ruby
