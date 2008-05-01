@@ -38,6 +38,7 @@
 require "rbconfig"
 require "digest/md5"
 require 'fileutils'
+require 'rubygems'
 
 $TESTING = false unless defined? $TESTING
 
@@ -53,9 +54,17 @@ module Inline
   VERSION = '3.6.7'
 
   WINDOZE  = /win(32|64)/ =~ RUBY_PLATFORM
+  RUBINIUS = defined? RUBY_ENGINE
   DEV_NULL = (WINDOZE ? 'nul'      : '/dev/null')
-  RAKE     = (WINDOZE ? 'rake.bat' : 'rake')
   GEM      = (WINDOZE ? 'gem.bat'  : 'gem')
+  RAKE     = if WINDOZE then
+               'rake.bat'
+             elsif RUBINIUS then
+               File.join(Gem.bindir, 'rake')
+             else
+               "#{Gem.ruby} -S rake"
+             end
+
 
   warn "RubyInline v #{VERSION}" if $DEBUG
 
@@ -69,8 +78,7 @@ module Inline
     env = ENV['HOMEDRIVE'] + ENV['HOMEPATH'] if env.nil? and WINDOZE
 
     if env.nil? then
-      warn "Define INLINEDIR or HOME in your environment and try again"
-      exit 1
+      abort "Define INLINEDIR or HOME in your environment and try again"
     end
 
     unless defined? @@rootdir and env == @@rootdir and test ?d, @@rootdir then
@@ -665,7 +673,7 @@ module Inline
       @gem_libs
     end
 
-    RAKEFILE_TEMPLATE = '%[require "rake"\nrequire "rake/gempackagetask"\n\nsummary = #{summary.inspect}\n\nif summary.empty? then\n  STDERR.puts "*************************************"\n  STDERR.puts "*** Summary not filled in, SHAME! ***"\n  STDERR.puts "*************************************"\nend\n\nspec = Gem::Specification.new do |s|\n  s.name = #{name.inspect}\n  s.version = #{version.inspect}\n  s.summary = summary\n\n  s.has_rdoc = false\n  s.files = #{gem_libs.inspect}\n  s.add_dependency "RubyInline", ">= 3.3.0"\n  s.require_path = "lib"\nend\n\ndesc "Builds a gem with #{name} in it"\nRake::GemPackageTask.new spec do |pkg|\n  pkg.need_zip = false\n  pkg.need_tar = false\nend\n]'
+    RAKEFILE_TEMPLATE = '%[require "rake"\nrequire "rake/gempackagetask"\n\nsummary = #{summary.inspect}\n\nif summary.empty? then\n  STDERR.puts "*************************************"\n  STDERR.puts "*** Summary not filled in, SHAME! ***"\n  STDERR.puts "*************************************"\nend\n\nspec = Gem::Specification.new do |s|\n  s.name = #{name.inspect}\n  s.version = #{version.inspect}\n  s.summary = summary\n\n  s.author = "Fred"\n  s.email = "fred@example.com"\n  s.homepage = "http://blah.example.com/"\n  s.rubyforge_project = "#{name.downcase}"\n  s.has_rdoc = true\n  s.files = #{gem_libs.inspect}\n  s.add_dependency "RubyInline", ">= 3.3.0"\n  s.require_path = "lib"\nend\n\ndesc "Builds a gem with #{name} in it"\nRake::GemPackageTask.new spec do |pkg|\n  pkg.need_zip = false\n  pkg.need_tar = false\nend\n]'
   end # class Packager
 end # module Inline
 

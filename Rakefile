@@ -13,6 +13,8 @@ Hoe.new("RubyInline", Inline::VERSION) do |inline|
     "A POSIX environment and a compiler for your language."
 end
 
+task :test => :clean
+
 desc "run all examples"
 task :examples do
   %w(example.rb example2.rb
