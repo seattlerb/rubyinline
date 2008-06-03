@@ -2,7 +2,6 @@ History.txt
 Manifest.txt
 README.txt
 Rakefile
-bin/inline_package
 demo/fastmath.rb
 demo/hello.rb
 example.rb

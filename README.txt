@@ -7,14 +7,29 @@
 
 == DESCRIPTION:
 
-Ruby Inline is an analog to Perl's Inline::C. Out of the box, it
-allows you to embed C/++ external module code in your ruby script
-directly. By writing simple builder classes, you can teach how to cope
-with new languages (fortran, perl, whatever). The code is compiled and
-run on the fly when needed.
+Inline allows you to write foreign code within your ruby code. It
+automatically determines if the code in question has changed and
+builds it only when necessary. The extensions are then automatically
+loaded into the class/module that defines it.
 
-Using the package_inline tool Inline allows you to package up your
-inlined object code for distribution to systems without a compiler.
+You can even write extra builders that will allow you to write inlined
+code in any language. Use Inline::C as a template and look at
+Module#inline for the required API.
+
+== PACKAGING:
+
+To package your binaries into a gem, use hoe's INLINE and
+FORCE_PLATFORM env vars.
+
+Example:
+
+  rake package INLINE=1
+
+or:
+
+  rake package INLINE=1 FORCE_PLATFORM=mswin32
+
+See hoe for more details.
 
 == FEATURES/PROBLEMS:
 
@@ -26,7 +41,6 @@ inlined object code for distribution to systems without a compiler.
 + Only recompiles if the inlined code has changed.
 + Pretends to be secure.
 + Only requires standard ruby libraries, nothing extra to download.
-+ Can generate a basic Rakefile and package up built extensions for distribution.
 
 == SYNOPSYS:
 
@@ -62,13 +76,6 @@ inlined object code for distribution to systems without a compiler.
   t = MyTest.new()
   t.hello(3)
 
-== SYNOPSYS (packaging):
-
-  rm -rf ~/.ruby_inline
-  make test
-  inline_package packagename 1.0.0
-  ls lib/inline
-
 == (PSEUDO)BENCHMARKS:
 
   > make bench
@@ -100,7 +107,6 @@ inlined object code for distribution to systems without a compiler.
 + POSIX compliant system (ie pretty much any UNIX, or Cygwin on MS platforms).
 + A C/C++ compiler (the same one that compiled your ruby interpreter).
 + test::unit for running tests ( http://testunit.talbott.ws/ ).
-+ rubygems & rake if you'd like - these are used by inline_package.
 
 == INSTALL:
 

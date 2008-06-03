@@ -4,7 +4,7 @@
 # Ruby Inline is a framework for writing ruby extensions in foreign
 # languages.
 #
-# = SYNOPSIS
+# == SYNOPSIS
 #
 #   require 'inline'
 #   class MyClass
@@ -20,20 +20,32 @@
 #     end
 #   end
 #
-# = DESCRIPTION
+# == DESCRIPTION
 #
 # Inline allows you to write foreign code within your ruby code. It
 # automatically determines if the code in question has changed and
 # builds it only when necessary. The extensions are then automatically
 # loaded into the class/module that defines it.
 #
-# Using the package_inline tool Inline now allows you to package up
-# your inlined object code for distribution to systems without a
-# compiler (read: windows)!
-#
 # You can even write extra builders that will allow you to write
 # inlined code in any language. Use Inline::C as a template and look
 # at Module#inline for the required API.
+#
+# == PACKAGING
+#
+# To package your binaries into a gem, use hoe's INLINE and
+# FORCE_PLATFORM env vars.
+#
+# Example:
+#
+#   rake package INLINE=1
+#
+# or:
+#
+#   rake package INLINE=1 FORCE_PLATFORM=mswin32
+#
+# See hoe for more details.
+#
 
 require "rbconfig"
 require "digest/md5"
@@ -599,82 +611,6 @@ module Inline
     end
 
   end # class Inline::C
-  class Packager
-    attr_accessor :name, :version, :summary, :libs_copied, :inline_dir
-
-    def initialize(name, version, summary = '')
-      @name = name
-      @version = version
-      @summary = summary
-      @libs_copied = false
-      @ext = Config::CONFIG['DLEXT']
-
-      # TODO (maybe) put libs in platform dir
-      @inline_dir = File.join "lib", "inline"
-    end
-
-    def package
-      copy_libs
-      generate_rakefile
-      build_gem
-    end
-
-    def copy_libs
-      unless @libs_copied then
-        FileUtils.mkdir_p @inline_dir
-        built_libs = Dir.glob File.join(Inline.directory, "*.#{@ext}")
-        FileUtils.cp built_libs, @inline_dir
-        @libs_copied = true
-      end
-    end
-
-    def generate_rakefile
-      if File.exists? 'Rakefile' then
-        unless $TESTING then
-          STDERR.puts "Hrm, you already have a Rakefile, so I didn't touch it."
-          STDERR.puts "You might have to add the following files to your gemspec's files list:"
-          STDERR.puts "\t#{gem_libs.join "\n\t"}"
-        end
-        return
-      end
-
-      rakefile = eval RAKEFILE_TEMPLATE
-
-      STDERR.puts "==> Generating Rakefile" unless $TESTING
-      File.open 'Rakefile', 'w' do |fp|
-        fp.puts rakefile
-      end
-    end
-
-    def build_gem
-      STDERR.puts "==> Running rake" unless $TESTING or $DEBUG
-
-      cmd = "#{RAKE} package"
-      cmd += "> #{DEV_NULL} 2> #{DEV_NULL}" if $TESTING unless $DEBUG
-
-      if system cmd then
-        unless $TESTING then
-          STDERR.puts
-          STDERR.puts "Ok, you now have a gem in ./pkg, enjoy!"
-        end
-      else
-        STDERR.puts "Calling rake to build the gem failed." unless $TESTING
-      end
-    end
-
-    def gem_libs
-      unless defined? @gem_libs then
-        @gem_libs = Dir.glob File.join(@inline_dir, "*.#{@ext}")
-        files = Dir.glob(File.join('lib', '*')).select { |f| test ?f, f }
-
-        @gem_libs.push(*files)
-        @gem_libs.sort!
-      end
-      @gem_libs
-    end
-
-    RAKEFILE_TEMPLATE = '%[require "rake"\nrequire "rake/gempackagetask"\n\nsummary = #{summary.inspect}\n\nif summary.empty? then\n  STDERR.puts "*************************************"\n  STDERR.puts "*** Summary not filled in, SHAME! ***"\n  STDERR.puts "*************************************"\nend\n\nspec = Gem::Specification.new do |s|\n  s.name = #{name.inspect}\n  s.version = #{version.inspect}\n  s.summary = summary\n\n  s.author = "Fred"\n  s.email = "fred@example.com"\n  s.homepage = "http://blah.example.com/"\n  s.rubyforge_project = "#{name.downcase}"\n  s.has_rdoc = true\n  s.files = #{gem_libs.inspect}\n  s.add_dependency "RubyInline", ">= 3.3.0"\n  s.require_path = "lib"\nend\n\ndesc "Builds a gem with #{name} in it"\nRake::GemPackageTask.new spec do |pkg|\n  pkg.need_zip = false\n  pkg.need_tar = false\nend\n]'
-  end # class Packager
 end # module Inline
 
 class Module
