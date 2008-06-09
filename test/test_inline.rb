@@ -42,9 +42,7 @@ class TestDir < InlineTestCase
     @count += 1
     Dir.mkdir path, perms unless perms.nil?
     if should_pass then
-      assert_nothing_raised do
-        Dir.assert_secure path
-      end
+      Dir.assert_secure path
     else
       assert_raises(SecurityError) do
         Dir.assert_secure path
@@ -365,7 +363,7 @@ return INT2FIX(42)}"
   return q+x+y+z;
 }"
 
-    assert_raise(ArgumentError) do
+    assert_raises ArgumentError do
       @builder.generate src, true
     end
   end
@@ -651,7 +649,7 @@ class TestModule < InlineTestCase
     util_arity_check
     fb = Foo::Bar.new
 
-    assert_raise(ArgumentError) do
+    assert_raises ArgumentError do
       fb.arity6(1, 2, 3)
     end
   end
@@ -659,7 +657,7 @@ class TestModule < InlineTestCase
   def test_argument_check_more
     util_arity_check
     fb = Foo::Bar.new
-    assert_raise ArgumentError do
+    assert_raises ArgumentError do
       fb.arity6(1, 2, 3, 4, 5, "blah", :extra)
     end
   end
