@@ -1,3 +1,19 @@
+=== 3.7.0 / 2008-06-09
+
+* 1 major enhancements:
+
+  * Removed inline_package in favor of hoe's packaging.
+
+* 2 minor enhancements:
+
+  * Switched from warn/exit to abort to fix buffering for error messages.
+  * Improved some error messages.
+
+* 2 bug fixes:
+
+  * Fixes for rubinius.
+  * Fixes for 1.9.
+
 === 3.6.7 / 2008-03-20
 
 * 3 minor enhancements:
