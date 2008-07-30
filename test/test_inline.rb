@@ -103,14 +103,14 @@ class TestC < InlineTestCase
 
   def test_ruby2c
     x = Inline::C.new(self.class)
-    assert_equal 'NUM2CHR',  x.ruby2c("char")
-    assert_equal 'STR2CSTR', x.ruby2c("char *")
-    assert_equal 'FIX2INT',  x.ruby2c("int")
-    assert_equal 'NUM2INT',  x.ruby2c("long")
-    assert_equal 'NUM2UINT', x.ruby2c("unsigned int")
-    assert_equal 'NUM2UINT', x.ruby2c("unsigned long")
-    assert_equal 'NUM2UINT', x.ruby2c("unsigned")
-    assert_equal '',         x.ruby2c("VALUE")
+    assert_equal 'NUM2CHR',   x.ruby2c("char")
+    assert_equal 'STR2CSTR',  x.ruby2c("char *")
+    assert_equal "FI\X2INT",  x.ruby2c("int")
+    assert_equal 'NUM2LONG',  x.ruby2c("long")
+    assert_equal 'NUM2UINT',  x.ruby2c("unsigned int")
+    assert_equal 'NUM2ULONG', x.ruby2c("unsigned long")
+    assert_equal 'NUM2UINT',  x.ruby2c("unsigned")
+    assert_equal '',          x.ruby2c("VALUE")
 
     assert_raises ArgumentError do
       x.ruby2c('blah')
@@ -122,9 +122,9 @@ class TestC < InlineTestCase
     assert_equal 'CHR2FIX',     x.c2ruby("char")
     assert_equal 'rb_str_new2', x.c2ruby("char *")
     assert_equal 'INT2FIX',     x.c2ruby("int")
-    assert_equal 'INT2NUM',     x.c2ruby("long")
+    assert_equal 'LONG2NUM',    x.c2ruby("long")
     assert_equal 'UINT2NUM',    x.c2ruby("unsigned int")
-    assert_equal 'UINT2NUM',    x.c2ruby("unsigned long")
+    assert_equal 'ULONG2NUM',   x.c2ruby("unsigned long")
     assert_equal 'UINT2NUM',    x.c2ruby("unsigned")
     assert_equal '',            x.c2ruby("VALUE")
 
@@ -244,7 +244,7 @@ class TestC < InlineTestCase
 
 
     util_parse_signature(src, expected,
-             "register int", 'FIX2INT', 'INT2FIX')
+             "register int", "FI\X2INT", "INT2FI\X")
   end
 
   def util_generate(src, expected, expand_types=true)
@@ -433,7 +433,7 @@ static VALUE add(VALUE self, VALUE _x, VALUE _y) {
     src = "unsigned\nlong z(void) {return 42}"
 
     expected = "static VALUE z(VALUE self) {
-return UINT2NUM(42)}"
+return ULONG2NUM(42)}"
 
     util_generate(src, expected)
   end
