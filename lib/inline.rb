@@ -125,15 +125,15 @@ module Inline
     MAGIC_ARITY = -1
 
     @@type_map = {
-      'char'          => [ 'NUM2CHR',   'CHR2FIX'      ],
-      'char *'        => [ 'STR2CSTR',  'rb_str_new2'  ],
-      'double'        => [ 'NUM2DBL',   'rb_float_new' ],
-      'int'           => [ "FI\X2INT",  'INT2FIX'      ],
-      'long'          => [ 'NUM2LONG',  'LONG2NUM'     ],
-      'unsigned int'  => [ 'NUM2UINT',  'UINT2NUM'     ],
-      'unsigned long' => [ 'NUM2ULONG', 'ULONG2NUM'    ],
-      'unsigned'      => [ 'NUM2UINT',  'UINT2NUM'     ],
-      'VALUE'         => [ '',          ''             ],
+      'char'          => [ 'NUM2CHR',        'CHR2FIX'      ],
+      'char *'        => [ 'StringValuePtr', 'rb_str_new2'  ],
+      'double'        => [ 'NUM2DBL',        'rb_float_new' ],
+      'int'           => [ "FI\X2INT",       'INT2FIX'      ],
+      'long'          => [ 'NUM2LONG',       'LONG2NUM'     ],
+      'unsigned int'  => [ 'NUM2UINT',       'UINT2NUM'     ],
+      'unsigned long' => [ 'NUM2ULONG',      'ULONG2NUM'    ],
+      'unsigned'      => [ 'NUM2UINT',       'UINT2NUM'     ],
+      'VALUE'         => [ '',               ''             ],
       # Can't do these converters because they conflict with the above:
       # ID2SYM(x), SYM2ID(x), NUM2DBL(x), F\IX2UINT(x)
     }

@@ -103,14 +103,14 @@ class TestC < InlineTestCase
 
   def test_ruby2c
     x = Inline::C.new(self.class)
-    assert_equal 'NUM2CHR',   x.ruby2c("char")
-    assert_equal 'STR2CSTR',  x.ruby2c("char *")
-    assert_equal "FI\X2INT",  x.ruby2c("int")
-    assert_equal 'NUM2LONG',  x.ruby2c("long")
-    assert_equal 'NUM2UINT',  x.ruby2c("unsigned int")
-    assert_equal 'NUM2ULONG', x.ruby2c("unsigned long")
-    assert_equal 'NUM2UINT',  x.ruby2c("unsigned")
-    assert_equal '',          x.ruby2c("VALUE")
+    assert_equal 'NUM2CHR',        x.ruby2c("char")
+    assert_equal 'StringValuePtr', x.ruby2c("char *")
+    assert_equal "FI\X2INT",       x.ruby2c("int")
+    assert_equal 'NUM2LONG',       x.ruby2c("long")
+    assert_equal 'NUM2UINT',       x.ruby2c("unsigned int")
+    assert_equal 'NUM2ULONG',      x.ruby2c("unsigned long")
+    assert_equal 'NUM2UINT',       x.ruby2c("unsigned")
+    assert_equal '',               x.ruby2c("VALUE")
 
     assert_raises ArgumentError do
       x.ruby2c('blah')
@@ -453,7 +453,7 @@ return INT2FIX(x+y)}"
     src = "char\n\*\n  blah(  char*s) {puts(s); return s}"
 
     expected = "static VALUE blah(VALUE self, VALUE _s) {
-  char * s = STR2CSTR(_s);
+  char * s = StringValuePtr(_s);
 puts(s); return rb_str_new2(s)}"
 
     util_generate(src, expected)
