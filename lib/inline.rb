@@ -52,6 +52,8 @@ require "digest/md5"
 require 'fileutils'
 require 'rubygems'
 
+require 'zentest_mapping'
+
 $TESTING = false unless defined? $TESTING
 
 class CompilationError < RuntimeError; end
@@ -63,7 +65,7 @@ class CompilationError < RuntimeError; end
 # the current namespace.
 
 module Inline
-  VERSION = '3.7.0'
+  VERSION = '3.8.0'
 
   WINDOZE  = /win(32|64)/ =~ RUBY_PLATFORM
   RUBINIUS = defined? RUBY_ENGINE
@@ -209,7 +211,8 @@ module Inline
 
       signature = parse_signature(src, !expand_types)
       function_name = signature['name']
-      method_name = options[:method_name] || function_name
+      method_name = options[:method_name]
+      method_name ||= ZenTestMapping.test_to_normal function_name
       return_type = signature['return']
       arity = signature['arity']
 

@@ -1,3 +1,10 @@
+=== 3.8.0 / ??
+
+* N minor enhancements:
+
+  * Inline::C now uses ZenTestMapping to automatically map C functions to ruby
+    names.
+
 === 3.7.0 / 2008-06-09
 
 * 1 major enhancements:

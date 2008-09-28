@@ -11,6 +11,7 @@ Hoe.new("RubyInline", Inline::VERSION) do |inline|
   inline.clean_globs << File.expand_path("~/.ruby_inline")
   inline.spec_extras[:requirements] =
     "A POSIX environment and a compiler for your language."
+  inline.extra_deps << 'ZenTest' # ZenTest mapping
 end
 
 task :test => :clean
