@@ -121,6 +121,8 @@ module Inline
 
   class C
 
+    include ZenTestMapping
+
     protected unless $TESTING
 
     MAGIC_ARITY_THRESHOLD = 15
@@ -139,16 +141,6 @@ module Inline
       # Can't do these converters because they conflict with the above:
       # ID2SYM(x), SYM2ID(x), NUM2DBL(x), F\IX2UINT(x)
     }
-
-    def ruby2c(type)
-      raise ArgumentError, "Unknown type #{type.inspect}" unless @@type_map.has_key? type
-      @@type_map[type].first
-    end
-
-    def c2ruby(type)
-      raise ArgumentError, "Unknown type #{type.inspect}" unless @@type_map.has_key? type
-      @@type_map[type].last
-    end
 
     def strip_comments(src)
       # strip c-comments
@@ -212,7 +204,7 @@ module Inline
       signature = parse_signature(src, !expand_types)
       function_name = signature['name']
       method_name = options[:method_name]
-      method_name ||= ZenTestMapping.test_to_normal function_name
+      method_name ||= test_to_normal function_name
       return_type = signature['return']
       arity = signature['arity']
 
@@ -310,6 +302,23 @@ module Inline
       @libs = []
       @init_extra = []
       @include_ruby_first = true
+      @inherited_methods = {}
+    end
+
+    ##
+    # Converts ruby type +type+ to a C type
+
+    def ruby2c(type)
+      raise ArgumentError, "Unknown type #{type.inspect}" unless @@type_map.has_key? type
+      @@type_map[type].first
+    end
+
+    ##
+    # Converts C type +type+ to a ruby type
+
+    def c2ruby(type)
+      raise ArgumentError, "Unknown type #{type.inspect}" unless @@type_map.has_key? type
+      @@type_map[type].last
     end
 
     ##
