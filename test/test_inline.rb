@@ -409,6 +409,16 @@ static VALUE add(VALUE self, VALUE _x, VALUE _y) {
     util_generate(src, expected)
   end
 
+  def test_generate_map_name
+    src = "VALUE y_equals(VALUE self) {blah;}"
+
+    expected = "static VALUE y_equals(VALUE self) {blah;}"
+
+    util_generate_raw(src, expected)
+
+    assert_equal [-1, nil, 'y='], @builder.sig['y_equals']
+  end
+
   def test_generate_system_header
     src = "// stupid cpp comment
 #include <header>
