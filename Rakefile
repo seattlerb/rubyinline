@@ -3,6 +3,8 @@
 require 'rubygems'
 require 'hoe'
 
+Hoe.add_include_dirs "../../ZenTest/dev/lib"
+
 require './lib/inline.rb'
 
 Hoe.new("RubyInline", Inline::VERSION) do |inline|
