@@ -318,6 +318,7 @@ module Inline
       @init_extra = []
       @include_ruby_first = true
       @inherited_methods = {}
+      @struct_name = nil
 
       @type_map = TYPE_MAP.dup
     end
