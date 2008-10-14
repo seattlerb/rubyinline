@@ -6,6 +6,7 @@
     names.
   * Inline::C#map_c_const can now map to a ruby constant name.
   * Added accessors for members of Data_Wrap_Structs.  See Inline::C#accessor.
+  * Added long long, unsigned long long, off_t types to built-in type map.
 
 === 3.7.0 / 2008-06-09
 

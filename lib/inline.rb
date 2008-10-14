@@ -118,7 +118,7 @@ module Inline
   # Inline::C is the default builder used and the only one provided by
   # Inline. It can be used as a template to write builders for other
   # languages. It understands type-conversions for the basic types and
-  # can be extended as needed.
+  # can be extended as needed using #add_type_converter.
 
   class C
 
@@ -127,18 +127,31 @@ module Inline
     MAGIC_ARITY_THRESHOLD = 15
     MAGIC_ARITY = -1
 
-    @@type_map = {
-      'char'          => [ 'NUM2CHR',        'CHR2FIX'      ],
-      'char *'        => [ 'StringValuePtr', 'rb_str_new2'  ],
-      'double'        => [ 'NUM2DBL',        'rb_float_new' ],
-      'int'           => [ "FI\X2INT",       'INT2FIX'      ],
-      'long'          => [ 'NUM2LONG',       'LONG2NUM'     ],
-      'unsigned int'  => [ 'NUM2UINT',       'UINT2NUM'     ],
-      'unsigned long' => [ 'NUM2ULONG',      'ULONG2NUM'    ],
-      'unsigned'      => [ 'NUM2UINT',       'UINT2NUM'     ],
-      'VALUE'         => [ '',               ''             ],
+    ##
+    # Default C to ruby and ruby to C type map
+
+    TYPE_MAP = {
+      'char'               => [ 'NUM2CHR',        'CHR2FIX'      ],
+
+      'char *'             => [ 'StringValuePtr', 'rb_str_new2'  ],
+
+      'double'             => [ 'NUM2DBL',        'rb_float_new' ],
+
+      'int'                => [ "FI\X2INT",       'INT2FIX'      ],
+      'unsigned int'       => [ 'NUM2UINT',       'UINT2NUM'     ],
+      'unsigned'           => [ 'NUM2UINT',       'UINT2NUM'     ],
+
+      'long'               => [ 'NUM2LONG',       'LONG2NUM'     ],
+      'unsigned long'      => [ 'NUM2ULONG',      'ULONG2NUM'    ],
+
+      'long long'          => [ 'NUM2LL',         'LL2NUM'       ],
+      'unsigned long long' => [ 'NUM2ULL',        'ULL2NUM'      ],
+
+      'off_t'              => [ 'NUM2OFFT',       'OFFT2NUM'     ],
+
+      'VALUE'              => [ '',               ''             ],
       # Can't do these converters because they conflict with the above:
-      # ID2SYM(x), SYM2ID(x), NUM2DBL(x), F\IX2UINT(x)
+      # ID2SYM(x), SYM2ID(x), F\IX2UINT(x)
     }
 
     def strip_comments(src)
@@ -161,7 +174,7 @@ module Inline
       sig.gsub!(/\s+/, ' ')
 
       unless defined? @types then
-        @types = 'void|' + @@type_map.keys.map{|x| Regexp.escape(x)}.join('|')
+        @types = 'void|' + @type_map.keys.map{|x| Regexp.escape(x)}.join('|')
       end
 
       if /(#{@types})\s*(\w+)\s*\(([^)]*)\)/ =~ sig then
@@ -304,6 +317,8 @@ module Inline
       @init_extra = []
       @include_ruby_first = true
       @inherited_methods = {}
+
+      @type_map = TYPE_MAP.dup
     end
 
     ##
@@ -371,16 +386,16 @@ VALUE #{method}_equals(VALUE value) {
     # Converts ruby type +type+ to a C type
 
     def ruby2c(type)
-      raise ArgumentError, "Unknown type #{type.inspect}" unless @@type_map.has_key? type
-      @@type_map[type].first
+      raise ArgumentError, "Unknown type #{type.inspect}" unless @type_map.has_key? type
+      @type_map[type].first
     end
 
     ##
     # Converts C type +type+ to a ruby type
 
     def c2ruby(type)
-      raise ArgumentError, "Unknown type #{type.inspect}" unless @@type_map.has_key? type
-      @@type_map[type].last
+      raise ArgumentError, "Unknown type #{type.inspect}" unless @type_map.has_key? type
+      @type_map[type].last
     end
 
     ##
@@ -592,8 +607,15 @@ VALUE #{method}_equals(VALUE value) {
     # Registers C type-casts +r2c+ and +c2r+ for +type+.
 
     def add_type_converter(type, r2c, c2r)
-      warn "WAR\NING: overridding #{type} on #{caller[0]}" if @@type_map.has_key? type
-      @@type_map[type] = [r2c, c2r]
+      warn "WAR\NING: overridding #{type} on #{caller[0]}" if @type_map.has_key? type
+      @type_map[type] = [r2c, c2r]
+    end
+
+    ##
+    # Unregisters C type-casts for +type+.
+
+    def remove_type_converter(type)
+      @type_map.delete type
     end
 
     ##
