@@ -270,6 +270,68 @@ module Inline
       return result if $TESTING
     end # def generate
 
+    ##
+    # Builds a complete C extension suitable for writing to a file and
+    # compiling.
+
+    def generate_ext
+      ext = []
+
+      if @include_ruby_first
+        @inc.unshift "#include \"ruby.h\""
+      else
+        @inc.push "#include \"ruby.h\""
+      end
+
+      ext << @inc
+      ext << nil
+      ext << @src.join("\n\n")
+      ext << nil
+      ext << nil
+      ext << "#ifdef __cplusplus"
+      ext << "extern \"C\" {"
+      ext << "#endif"
+      ext << "  __declspec(dllexport)" if WINDOZE
+      ext << "  void Init_#{module_name}() {"
+      ext << "    VALUE c = rb_cObject;"
+
+      # TODO: use rb_class2path
+      # ext << "    VALUE c = rb_path2class(#{@mod.name.inspect});"
+      ext << @mod.name.split("::").map { |n|
+        "    c = rb_const_get(c, rb_intern(\"#{n}\"));"
+      }.join("\n")
+
+      ext << nil
+
+      @sig.keys.sort.each do |name|
+        method = ''
+        arity, singleton, method_name = @sig[name]
+        if singleton then
+          if method_name == 'allocate' then
+            raise "#{@mod}::allocate must have an arity of zero" if arity > 0
+            ext << "    rb_define_alloc_func(c, (VALUE(*)(VALUE))#{name});"
+            next
+          end
+          method << "    rb_define_singleton_method(c, \"#{method_name}\", "
+        else
+          method << "    rb_define_method(c, \"#{method_name}\", "
+        end
+        method << "(VALUE(*)(ANYARGS))#{name}, #{arity});"
+        ext << method
+      end
+
+      ext << @init_extra.join("\n") unless @init_extra.empty?
+
+      ext << nil
+      ext << "  }"
+      ext << "#ifdef __cplusplus"
+      ext << "}"
+      ext << "#endif"
+      ext << nil
+
+      ext.join "\n"
+    end
+
     def module_name
       unless defined? @module_name then
         module_name = @mod.name.gsub('::','__')
@@ -439,48 +501,7 @@ VALUE #{method}_equals(VALUE value) {
         src_name = "#{Inline.directory}/#{module_name}.c"
         old_src_name = "#{src_name}.old"
         should_compare = File.write_with_backup(src_name) do |io|
-          if @include_ruby_first
-            @inc.unshift "#include \"ruby.h\""
-          else
-            @inc.push "#include \"ruby.h\""
-          end
-
-          io.puts
-          io.puts @inc.join("\n")
-          io.puts
-          io.puts @src.join("\n\n")
-          io.puts
-          io.puts
-          io.puts "#ifdef __cplusplus"
-          io.puts "extern \"C\" {"
-          io.puts "#endif"
-          io.puts "  __declspec(dllexport)" if WINDOZE
-          io.puts "  void Init_#{module_name}() {"
-          io.puts "    VALUE c = rb_cObject;"
-
-          # TODO: use rb_class2path
-          # io.puts "    VALUE c = rb_path2class(#{@mod.name.inspect});"
-          io.puts @mod.name.split("::").map { |n|
-            "    c = rb_const_get(c,rb_intern(\"#{n}\"));"
-          }.join("\n")
-
-          @sig.keys.sort.each do |name|
-            arity, singleton, method_name = @sig[name]
-            if singleton then
-              io.print "    rb_define_singleton_method(c, \"#{method_name}\", "
-            else
-              io.print "    rb_define_method(c, \"#{method_name}\", "
-            end
-            io.puts  "(VALUE(*)(ANYARGS))#{name}, #{arity});"
-          end
-          io.puts @init_extra.join("\n") unless @init_extra.empty?
-
-          io.puts
-          io.puts "  }"
-          io.puts "#ifdef __cplusplus"
-          io.puts "}"
-          io.puts "#endif"
-          io.puts
+          io.puts generate_ext
         end
 
         # recompile only if the files are different

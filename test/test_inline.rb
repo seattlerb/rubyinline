@@ -741,6 +741,54 @@ puts(s); return rb_str_new2(s)}"
     util_generate(src, expected)
   end
 
+  def test_generate_ext
+    @builder.c_singleton "VALUE allocate() { return Qnil; }"
+
+    @builder.c "VALUE my_method() { return Qnil; }"
+
+    expected = <<-EXT
+#include "ruby.h"
+
+# line N "./test/test_inline.rb"
+static VALUE allocate(VALUE self) {
+ return (Qnil); }
+
+# line N "./test/test_inline.rb"
+static VALUE my_method(VALUE self) {
+ return (Qnil); }
+
+
+#ifdef __cplusplus
+extern \"C\" {
+#endif
+  void Init_Inline_TestInline__TestC_eba5() {
+    VALUE c = rb_cObject;
+    c = rb_const_get(c, rb_intern("TestInline"));
+    c = rb_const_get(c, rb_intern("TestC"));
+
+    rb_define_alloc_func(c, (VALUE(*)(VALUE))allocate);
+    rb_define_method(c, "my_method", (VALUE(*)(ANYARGS))my_method, 0);
+
+  }
+#ifdef __cplusplus
+}
+#endif
+    EXT
+
+    assert_equal expected, util_strip_lines(@builder.generate_ext)
+  end
+
+  def test_generate_ext_bad_allocate
+    @builder.c_singleton "VALUE allocate(VALUE bad) { return Qnil; }"
+
+    e = assert_raise RuntimeError do
+      @builder.generate_ext
+    end
+
+    assert_equal 'TestInline::TestC::allocate must have an arity of zero',
+                 e.message
+  end
+
   def test_c
     result = @builder.c "int add(int a, int b) { return a + b; }"
 

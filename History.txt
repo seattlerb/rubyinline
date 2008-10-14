@@ -9,6 +9,10 @@
   * Added long long, unsigned long long, off_t types to built-in type map.
   * Added #alias_type_converter and #remove_type_converter.
 
+* N bug fixes:
+
+  * Inline::C now uses rb_define_alloc_func().
+
 === 3.7.0 / 2008-06-09
 
 * 1 major enhancements:
