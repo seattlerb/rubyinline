@@ -199,6 +199,15 @@ static VALUE method_name_equals(VALUE self, VALUE _value) {
     assert_equal 'ruby_type2my_type', builder.ruby2c('my_type')
   end
 
+  def test_alias_type_converter
+    builder = Inline::C.new self.class
+
+    builder.alias_type_converter 'long long', 'int64_t'
+
+    assert_equal 'LL2NUM', builder.c2ruby('int64_t')
+    assert_equal 'NUM2LL', builder.ruby2c('int64_t')
+  end
+
   def test_reader
     builder = Inline::C.new self.class
 

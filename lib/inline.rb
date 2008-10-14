@@ -118,7 +118,8 @@ module Inline
   # Inline::C is the default builder used and the only one provided by
   # Inline. It can be used as a template to write builders for other
   # languages. It understands type-conversions for the basic types and
-  # can be extended as needed using #add_type_converter.
+  # can be extended as needed using #add_type_converter, #alias_type_converter
+  # and #remove_type_converter.
 
   class C
 
@@ -609,6 +610,16 @@ VALUE #{method}_equals(VALUE value) {
     def add_type_converter(type, r2c, c2r)
       warn "WAR\NING: overridding #{type} on #{caller[0]}" if @type_map.has_key? type
       @type_map[type] = [r2c, c2r]
+    end
+
+    ##
+    # Registers C type +alias_type+ as an alias of +existing_type+
+
+    def alias_type_converter(existing_type, alias_type)
+      warn "WAR\NING: overridding #{type} on #{caller[0]}" if
+        @type_map.has_key? alias_type
+
+      @type_map[alias_type] = @type_map[existing_type]
     end
 
     ##
