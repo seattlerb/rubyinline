@@ -4,6 +4,7 @@
 
   * Inline::C now uses ZenTestMapping to automatically map C functions to ruby
     names.
+  * Inline::C#map_c_const can now map to a ruby constant name.
 
 === 3.7.0 / 2008-06-09
 

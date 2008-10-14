@@ -491,6 +491,26 @@ puts(s); return rb_str_new2(s)}"
     assert_equal [expected], @builder.src
   end
 
+  def test_map_c_const
+    @builder.map_c_const :C_NAME => :int
+
+    expected = [
+      "    rb_define_const(c, \"C_NAME\", INT2FIX(C_NAME));"
+    ]
+
+    assert_equal expected, @builder.init_extra
+  end
+
+  def test_map_c_const_named
+    @builder.map_c_const :C_NAME => [:int, :RUBY_NAME]
+
+    expected = [
+      "    rb_define_const(c, \"RUBY_NAME\", INT2FIX(C_NAME));"
+    ]
+
+    assert_equal expected, @builder.init_extra
+  end
+
   # TODO: fix ?
   def util_simple_code(klassname, c_src)
     result = "

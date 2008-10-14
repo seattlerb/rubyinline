@@ -277,7 +277,7 @@ module Inline
     attr_reader :rb_file, :mod
     if $TESTING then
       attr_writer :mod
-      attr_accessor :src, :sig, :flags, :libs
+      attr_accessor :src, :sig, :flags, :libs, :init_extra
     end
 
     public
@@ -545,13 +545,19 @@ module Inline
     end
 
     ##
-    # Maps a C constant to ruby (with the same
-    # name). +names_and_types+ is a hash that maps the name of the
-    # constant to its C type.
+    # Maps a C constant to ruby. +names_and_types+ is a hash that maps the
+    # name of the constant to its C type.
+    #
+    #   builder.map_c_const :C_NAME => :int
+    #
+    # If you wish to give the constant a different ruby name:
+    #
+    #   builder.map_c_const :C_NAME => [:int, :RUBY_NAME]
 
     def map_c_const(names_and_types)
       names_and_types.each do |name, typ|
-        self.add_to_init "    rb_define_const(c, #{name.to_s.inspect}, #{c2ruby(typ.to_s)}(#{name}));"
+        typ, ruby_name = Array === typ ? typ : [typ, name]
+        self.add_to_init "    rb_define_const(c, #{ruby_name.to_s.inspect}, #{c2ruby(typ.to_s)}(#{name}));"
       end
     end
 
