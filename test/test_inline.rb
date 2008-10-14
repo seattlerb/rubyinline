@@ -101,6 +101,216 @@ class TestC < InlineTestCase
     assert_equal [], x.libs
   end
 
+  def test_accessor
+    builder = Inline::C.new self.class
+
+    builder.struct_name = 'MyStruct'
+    builder.accessor 'method_name', 'int'
+
+    source = util_strip_lines builder.src
+
+    expected = []
+    expected << <<-READER
+# line N "./lib/inline.rb"
+static VALUE method_name(VALUE self) {
+
+  MyStruct *pointer;
+
+  Data_Get_Struct(self, MyStruct, pointer);
+
+  return (INT2FIX(pointer->method_name));
+}
+    READER
+
+    expected << <<-WRITER
+# line N "./lib/inline.rb"
+static VALUE method_name_equals(VALUE self, VALUE _value) {
+  VALUE value = (_value);
+
+  MyStruct *pointer;
+
+  Data_Get_Struct(self, MyStruct, pointer);
+
+  pointer->method_name = FIX2INT(value);
+
+  return (value);
+}
+    WRITER
+
+    assert_equal expected, source
+  end
+
+  def test_accessor_member_name
+    builder = Inline::C.new self.class
+
+    builder.struct_name = 'MyStruct'
+    builder.accessor 'method_name', 'int', 'member_name'
+
+    source = util_strip_lines builder.src
+
+    expected = []
+    expected << <<-READER
+# line N "./lib/inline.rb"
+static VALUE method_name(VALUE self) {
+
+  MyStruct *pointer;
+
+  Data_Get_Struct(self, MyStruct, pointer);
+
+  return (INT2FIX(pointer->member_name));
+}
+    READER
+
+    expected << <<-WRITER
+# line N "./lib/inline.rb"
+static VALUE method_name_equals(VALUE self, VALUE _value) {
+  VALUE value = (_value);
+
+  MyStruct *pointer;
+
+  Data_Get_Struct(self, MyStruct, pointer);
+
+  pointer->member_name = FIX2INT(value);
+
+  return (value);
+}
+    WRITER
+
+    assert_equal expected, source
+  end
+
+  def test_accessor_no_struct_name
+    builder = Inline::C.new self.class
+
+    e = assert_raises RuntimeError do
+      builder.accessor 'method_name', 'int'
+    end
+
+    assert_equal "struct name not set for reader method_name int", e.message
+  end
+
+  def test_reader
+    builder = Inline::C.new self.class
+
+    builder.struct_name = 'MyStruct'
+    builder.reader 'method_name', 'int'
+
+    source = util_strip_lines builder.src
+
+    expected = []
+    expected << <<-READER
+# line N "./lib/inline.rb"
+static VALUE method_name(VALUE self) {
+
+  MyStruct *pointer;
+
+  Data_Get_Struct(self, MyStruct, pointer);
+
+  return (INT2FIX(pointer->method_name));
+}
+    READER
+
+    assert_equal expected, source
+  end
+
+  def test_reader_member_name
+    builder = Inline::C.new self.class
+
+    builder.struct_name = 'MyStruct'
+    builder.reader 'method_name', 'int', 'member_name'
+
+    source = util_strip_lines builder.src
+
+    expected = []
+    expected << <<-READER
+# line N "./lib/inline.rb"
+static VALUE method_name(VALUE self) {
+
+  MyStruct *pointer;
+
+  Data_Get_Struct(self, MyStruct, pointer);
+
+  return (INT2FIX(pointer->member_name));
+}
+    READER
+
+    assert_equal expected, source
+  end
+
+  def test_reader_no_struct_name
+    builder = Inline::C.new self.class
+
+    e = assert_raises RuntimeError do
+      builder.reader 'method_name', 'int'
+    end
+
+    assert_equal "struct name not set for reader method_name int", e.message
+  end
+
+  def test_writer
+    builder = Inline::C.new self.class
+
+    builder.struct_name = 'MyStruct'
+    builder.writer 'method_name', 'int'
+
+    source = util_strip_lines builder.src
+
+    expected = []
+    expected << <<-WRITER
+# line N "./lib/inline.rb"
+static VALUE method_name_equals(VALUE self, VALUE _value) {
+  VALUE value = (_value);
+
+  MyStruct *pointer;
+
+  Data_Get_Struct(self, MyStruct, pointer);
+
+  pointer->method_name = FIX2INT(value);
+
+  return (value);
+}
+    WRITER
+
+    assert_equal expected, source
+  end
+
+  def test_writer_member_name
+    builder = Inline::C.new self.class
+
+    builder.struct_name = 'MyStruct'
+    builder.writer 'method_name', 'int', 'member_name'
+
+    source = util_strip_lines builder.src
+
+    expected = []
+    expected << <<-WRITER
+# line N "./lib/inline.rb"
+static VALUE method_name_equals(VALUE self, VALUE _value) {
+  VALUE value = (_value);
+
+  MyStruct *pointer;
+
+  Data_Get_Struct(self, MyStruct, pointer);
+
+  pointer->member_name = FIX2INT(value);
+
+  return (value);
+}
+    WRITER
+
+    assert_equal expected, source
+  end
+
+  def test_writer_no_struct_name
+    builder = Inline::C.new self.class
+
+    e = assert_raises RuntimeError do
+      builder.writer 'method_name', 'int'
+    end
+
+    assert_equal "struct name not set for writer method_name int", e.message
+  end
+
   def test_ruby2c
     x = Inline::C.new(self.class)
     assert_equal 'NUM2CHR',        x.ruby2c("char")
@@ -249,6 +459,7 @@ class TestC < InlineTestCase
 
   def util_generate(src, expected, expand_types=true)
     result = @builder.generate src, expand_types
+    result = util_strip_lines result
     result.gsub!(/\# line \d+/, '# line N')
     expected = "# line N \"#{$0}\"\n" + expected
     assert_equal(expected, result)
@@ -256,6 +467,17 @@ class TestC < InlineTestCase
 
   def util_generate_raw(src, expected)
     util_generate(src, expected, false)
+  end
+
+  def util_strip_lines(src)
+    case src
+    when String then
+      src.gsub(/\# line \d+/, '# line N')
+    when Array then
+      src.map do |chunk|
+        util_strip_lines chunk
+      end
+    end
   end
 
   # Ruby Arity Rules, from the mouth of Matz:

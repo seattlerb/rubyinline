@@ -114,6 +114,7 @@ module Inline
     @@directory
   end
 
+  ##
   # Inline::C is the default builder used and the only one provided by
   # Inline. It can be used as a template to write builders for other
   # languages. It understands type-conversions for the basic types and
@@ -122,8 +123,6 @@ module Inline
   class C
 
     include ZenTestMapping
-
-    protected unless $TESTING
 
     MAGIC_ARITY_THRESHOLD = 15
     MAGIC_ARITY = -1
@@ -275,12 +274,14 @@ module Inline
     end
 
     attr_reader :rb_file, :mod
-    if $TESTING then
-      attr_writer :mod
-      attr_accessor :src, :sig, :flags, :libs, :init_extra
-    end
+    attr_writer :mod
+    attr_accessor :src, :sig, :flags, :libs, :init_extra
 
-    public
+    ##
+    # Sets the name of the C struct for generating accessors.  Used with
+    # #accessor, #reader, #writer.
+
+    attr_accessor :struct_name
 
     def initialize(mod)
       raise ArgumentError, "Class/Module arg is required" unless Module === mod
@@ -303,6 +304,67 @@ module Inline
       @init_extra = []
       @include_ruby_first = true
       @inherited_methods = {}
+    end
+
+    ##
+    # Adds a #reader and #writer for a C struct member wrapped via
+    # Data_Wrap_Struct.  +method+ is the ruby name to give the accessor,
+    # +type+ is the C type.  Unless the C member name is overridden with
+    # +member+, the method name is used as the struct member.
+    #
+    #   builder.struct_name = 'MyStruct'
+    #   builder.accessor :title,        'char *'
+    #   builder.accessor :stream_index, 'int',   :index
+    #
+    # The latter accesses MyStruct->index via the stream_index method.
+
+    def accessor(method, type, member = method)
+      reader method, type, member
+      writer method, type, member
+    end
+
+    ##
+    # Adds a reader for a C struct member wrapped via Data_Wrap_Struct.
+    # +method+ is the ruby name to give the reader, +type+ is the C type.
+    # Unless the C member name is overridden with +member+, the method
+    # name is used as the struct member.  See #accessor for an example.
+
+    def reader(method, type, member = method)
+      raise "struct name not set for reader #{method} #{type}" unless
+        @struct_name
+
+      c <<-C
+VALUE #{method}() {
+  #{@struct_name} *pointer;
+
+  Data_Get_Struct(self, #{@struct_name}, pointer);
+
+  return #{c2ruby type}(pointer->#{member});
+}
+      C
+    end
+
+    ##
+    # Adds a writer for a C struct member wrapped via Data_Get_Struct.
+    # +method+ is the ruby name to give the writer, +type+ is the C type.
+    # Unless the C member name is overridden with +member+, the method
+    # name is used as the struct member.  See #accessor for an example.
+
+    def writer(method, type, member = method)
+      raise "struct name not set for writer #{method} #{type}" unless
+        @struct_name
+
+      c <<-C
+VALUE #{method}_equals(VALUE value) {
+  #{@struct_name} *pointer;
+
+  Data_Get_Struct(self, #{@struct_name}, pointer);
+
+  pointer->#{member} = #{ruby2c type}(value);
+
+  return value;
+}
+      C
     end
 
     ##
