@@ -8,6 +8,9 @@
   * Added accessors for members of Data_Wrap_Structs.  See Inline::C#accessor.
   * Added long long, unsigned long long, off_t types to built-in type map.
   * Added #alias_type_converter and #remove_type_converter.
+  * Consider MinGW (mingw) as valid Windows platform.
+  * Properly fallback to all the environment options under Windows. #22511.
+  * Properly join path under OS with drive letters. #22292.
 
 * N bug fixes:
 

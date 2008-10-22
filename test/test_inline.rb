@@ -16,7 +16,6 @@ class InlineTestCase < Test::Unit::TestCase
     @rootdir = File.join(Dir.tmpdir, "test_inline.#{$$}")
     Dir.mkdir @rootdir, 0700 unless test ?d, @rootdir
     ENV['INLINEDIR'] = @rootdir
-    Dir.mkdir Inline.directory, 0700
   end
 
   def teardown
@@ -746,6 +745,8 @@ puts(s); return rb_str_new2(s)}"
 
     @builder.c "VALUE my_method() { return Qnil; }"
 
+    windoze = "\n  __declspec(dllexport)" if Inline::WINDOZE
+
     expected = <<-EXT
 #include "ruby.h"
 
@@ -760,7 +761,7 @@ static VALUE my_method(VALUE self) {
 
 #ifdef __cplusplus
 extern \"C\" {
-#endif
+#endif#{windoze}
   void Init_Inline_TestInline__TestC_eba5() {
     VALUE c = rb_cObject;
     c = rb_const_get(c, rb_intern("TestInline"));

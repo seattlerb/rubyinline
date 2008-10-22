@@ -67,7 +67,7 @@ class CompilationError < RuntimeError; end
 module Inline
   VERSION = '3.8.0'
 
-  WINDOZE  = /win(32|64)/ =~ RUBY_PLATFORM
+  WINDOZE  = /mswin|mingw/ =~ RUBY_PLATFORM
   RUBINIUS = defined? RUBY_ENGINE
   DEV_NULL = (WINDOZE ? 'nul'      : '/dev/null')
   GEM      = (WINDOZE ? 'gem.bat'  : 'gem')
@@ -84,12 +84,34 @@ module Inline
 
   protected
 
+  # rootdir can be forced using INLINEDIR variable
+  # if not defined, it should store in user HOME folder
+  #
+  # Under Windows user data can be stored in several locations:
+  #
+  #  HOME
+  #  HOMEDRIVE + HOMEPATH
+  #  APPDATA
+  #  USERPROFILE
+  #
+  # Perform a check in that other to see if the environment is defined
+  # and if so, use it. only try this on Windows.
+
   def self.rootdir
     env = ENV['INLINEDIR'] || ENV['HOME']
 
-    # in case both INLINEDIR and HOME aren't defined, and under Windows
-    # default to HOMEDRIVE + HOMEPATH values
-    env = ENV['HOMEDRIVE'] + ENV['HOMEPATH'] if env.nil? and WINDOZE
+    if env.nil? and WINDOZE then
+      # try HOMEDRIVE + HOMEPATH combination
+      if ENV['HOMEDRIVE'] && ENV['HOMEPATH'] then
+        env = ENV['HOMEDRIVE'] + ENV['HOMEPATH']
+      end
+
+      # no HOMEDRIVE? use APPDATA
+      env = ENV['APPDATA'] if env.nil? and ENV['APPDATA']
+
+      # bummer, still no env? then fall to USERPROFILE
+      env = ENV['USERPROFILE'] if env.nil? and ENV['USERPROFILE']
+    end
 
     if env.nil? then
       abort "Define INLINEDIR or HOME in your environment and try again"
@@ -367,9 +389,9 @@ module Inline
       raise "Couldn't discover caller" if stack.empty?
       real_caller = stack.first
       real_caller = stack[3] if real_caller =~ /\(eval\)/
-      real_caller = real_caller.split(/:/, 3)[0..1]
-      @real_caller = real_caller.join ':'
-      @rb_file = File.expand_path real_caller.first
+      real_caller =~ /(.*):(\d+)/
+      real_caller = $1
+      @rb_file = File.expand_path real_caller
 
       @mod = mod
       @src = []
