@@ -1,6 +1,6 @@
 === 3.8.0 / 2008-10-22
 
-* N minor enhancements:
+* 8 minor enhancements:
 
   * Inline::C now uses ZenTestMapping to automatically map C functions to ruby
     names.
@@ -12,7 +12,7 @@
   * Properly fallback to all the environment options under Windows. #22511.
   * Properly join path under OS with drive letters. #22292.
 
-* N bug fixes:
+* 1 bug fixes:
 
   * Inline::C now uses rb_define_alloc_func().
 
