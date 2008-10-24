@@ -79,10 +79,16 @@ module Inline
                "#{Gem.ruby} -S rake"
              end
 
-
   warn "RubyInline v #{VERSION}" if $DEBUG
 
-  protected
+  def self.register cls
+    registered_inline_classes << cls
+    registered_inline_classes.uniq!
+  end
+
+  def self.registered_inline_classes
+    @@registered_inline_classes ||= []
+  end
 
   # rootdir can be forced using INLINEDIR variable
   # if not defined, it should store in user HOME folder
@@ -784,6 +790,8 @@ class Module
   # parameter.
 
   def inline(lang = :C, options={})
+    Inline.register self
+
     case options
     when TrueClass, FalseClass then
       warn "WAR\NING: 2nd argument to inline is now a hash, changing to {:testing=>#{options}}" unless options
