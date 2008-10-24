@@ -1,3 +1,9 @@
+=== 3.8.1 / 2008-10-24
+
+* 1 minor enhancement
+
+  * Inline registers all classes for hoe's INLINE=1 packaging feature.
+
 === 3.8.0 / 2008-10-22
 
 * 8 minor enhancements:
