@@ -10,6 +10,17 @@ require 'fileutils' unless defined?(::FileUtils)
 
 File.umask(0)
 
+require 'pathname'
+
+$expand_paths     = Pathname.new(__FILE__).absolute?
+$inline_path      = './lib/inline.rb'
+$test_inline_path = './test/test_inline.rb'
+
+if $expand_paths then
+  $inline_path      = File.expand_path $inline_path
+  $test_inline_path = File.expand_path $test_inline_path
+end
+
 class InlineTestCase < Test::Unit::TestCase
   def setup
     super
@@ -110,7 +121,7 @@ class TestC < InlineTestCase
 
     expected = []
     expected << <<-READER
-# line N "./lib/inline.rb"
+# line N "#{$inline_path}"
 static VALUE method_name(VALUE self) {
 
   MyStruct *pointer;
@@ -122,7 +133,7 @@ static VALUE method_name(VALUE self) {
     READER
 
     expected << <<-WRITER
-# line N "./lib/inline.rb"
+# line N "#{$inline_path}"
 static VALUE method_name_equals(VALUE self, VALUE _value) {
   VALUE value = (_value);
 
@@ -149,7 +160,7 @@ static VALUE method_name_equals(VALUE self, VALUE _value) {
 
     expected = []
     expected << <<-READER
-# line N "./lib/inline.rb"
+# line N "#{$inline_path}"
 static VALUE method_name(VALUE self) {
 
   MyStruct *pointer;
@@ -161,7 +172,7 @@ static VALUE method_name(VALUE self) {
     READER
 
     expected << <<-WRITER
-# line N "./lib/inline.rb"
+# line N "#{$inline_path}"
 static VALUE method_name_equals(VALUE self, VALUE _value) {
   VALUE value = (_value);
 
@@ -217,7 +228,7 @@ static VALUE method_name_equals(VALUE self, VALUE _value) {
 
     expected = []
     expected << <<-READER
-# line N "./lib/inline.rb"
+# line N "#{$inline_path}"
 static VALUE method_name(VALUE self) {
 
   MyStruct *pointer;
@@ -241,7 +252,7 @@ static VALUE method_name(VALUE self) {
 
     expected = []
     expected << <<-READER
-# line N "./lib/inline.rb"
+# line N "#{$inline_path}"
 static VALUE method_name(VALUE self) {
 
   MyStruct *pointer;
@@ -285,7 +296,7 @@ static VALUE method_name(VALUE self) {
 
     expected = []
     expected << <<-WRITER
-# line N "./lib/inline.rb"
+# line N "#{$inline_path}"
 static VALUE method_name_equals(VALUE self, VALUE _value) {
   VALUE value = (_value);
 
@@ -312,7 +323,7 @@ static VALUE method_name_equals(VALUE self, VALUE _value) {
 
     expected = []
     expected << <<-WRITER
-# line N "./lib/inline.rb"
+# line N "#{$inline_path}"
 static VALUE method_name_equals(VALUE self, VALUE _value) {
   VALUE value = (_value);
 
@@ -750,11 +761,11 @@ puts(s); return rb_str_new2(s)}"
     expected = <<-EXT
 #include "ruby.h"
 
-# line N "./test/test_inline.rb"
+# line N "#{$test_inline_path}"
 static VALUE allocate(VALUE self) {
  return (Qnil); }
 
-# line N "./test/test_inline.rb"
+# line N "#{$test_inline_path}"
 static VALUE my_method(VALUE self) {
  return (Qnil); }
 
