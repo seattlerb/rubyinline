@@ -4,8 +4,9 @@ require 'rubygems'
 require 'hoe'
 
 Hoe.add_include_dirs "../../ZenTest/dev/lib"
+Hoe.add_include_dirs "lib"
 
-require './lib/inline.rb'
+require 'inline'
 
 Hoe.new("RubyInline", Inline::VERSION) do |inline|
   inline.developer 'Ryan Davis', 'ryand-ruby@zenspider.com'
