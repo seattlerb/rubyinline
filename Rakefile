@@ -1,4 +1,4 @@
-# -*- ruby -*- 
+# -*- ruby -*-
 
 require 'rubygems'
 require 'hoe'
@@ -6,15 +6,15 @@ require 'hoe'
 Hoe.add_include_dirs "../../ZenTest/dev/lib"
 Hoe.add_include_dirs "lib"
 
-require 'inline'
+Hoe.plugin :seattlerb
 
-Hoe.new("RubyInline", Inline::VERSION) do |inline|
-  inline.developer 'Ryan Davis', 'ryand-ruby@zenspider.com'
+Hoe.spec "RubyInline" do
+  developer 'Ryan Davis', 'ryand-ruby@zenspider.com'
 
-  inline.clean_globs << File.expand_path("~/.ruby_inline")
-  inline.spec_extras[:requirements] =
+  clean_globs << File.expand_path("~/.ruby_inline")
+  spec_extras[:requirements] =
     "A POSIX environment and a compiler for your language."
-  inline.extra_deps << 'ZenTest' # ZenTest mapping
+  extra_deps << 'ZenTest' # ZenTest mapping
 end
 
 task :test => :clean
