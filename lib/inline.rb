@@ -648,6 +648,14 @@ VALUE #{method}_equals(VALUE value) {
     end
 
     ##
+    # Create a static variable and initialize it to a value.
+
+    def add_static name, init, type = "VALUE"
+      prefix      "static #{type} #{name};"
+      add_to_init "#{name} = #{init};"
+    end
+
+    ##
     # Adds custom content to the end of the init function.
 
     def add_to_init(*src)
