@@ -1,3 +1,9 @@
+=== 3.8.3 / 2009-08-07
+
+* 1 minor enhancement:
+
+  * Added Inline::C#add_static to make consts cleaner
+
 === 3.8.2 / 2009-06-23
 
 * 1 bug fix:
