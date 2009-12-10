@@ -1,3 +1,9 @@
+=== 3.8.4 / 2009-12-09
+
+* 1 bug fix:
+
+  * Clean up example.rb and force removal of ~/.ruby_inline
+
 === 3.8.3 / 2009-08-07
 
 * 1 minor enhancement:
