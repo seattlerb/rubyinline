@@ -1,11 +1,11 @@
 #!/usr/local/bin/ruby -w
 
-begin
-  require 'rubygems'
-rescue LoadError
-  $: << 'lib'
-end
+require 'rubygems'
+$:.unshift 'lib'
 require 'inline'
+
+require 'fileutils'
+FileUtils.rm_rf File.expand_path("~/.ruby_inline")
 
 class MyTest
 
