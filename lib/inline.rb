@@ -561,8 +561,12 @@ VALUE #{method}_equals(VALUE value) {
                           else
                             nil
                           end
+                          
+          ldshared = Config::CONFIG['LDSHARED']
+          # strip off some extra gunk in 1.9
+          ldshared = ldshared.gsub(/\$\(.*\)/, '') if RUBY_PLATFORM =~ /mingw/
 
-          cmd = [ Config::CONFIG['LDSHARED'],
+          cmd = [ ldshared,
                   flags,
                   Config::CONFIG['CCDLFLAGS'],
                   Config::CONFIG['CFLAGS'],
@@ -575,11 +579,12 @@ VALUE #{method}_equals(VALUE value) {
                   libs,
                   crap_for_windoze ].join(' ')
 
+          
           # TODO: remove after osx 10.5.2
           cmd += ' -flat_namespace -undefined suppress' if
             RUBY_PLATFORM =~ /darwin9\.[01]/
           cmd += " 2> #{DEV_NULL}" if $TESTING and not $DEBUG
-
+          #cmd = "bash -c \"#{cmd.gsub('"', '\\"')}\""
           warn "Building #{so_name} with '#{cmd}'" if $DEBUG
           result = `#{cmd}`
           warn "Output:\n#{result}" if $DEBUG
@@ -622,7 +627,7 @@ VALUE #{method}_equals(VALUE value) {
       when /mswin32/ then
         " -link /LIBPATH:\"#{Config::CONFIG['libdir']}\" /DEFAULTLIB:\"#{Config::CONFIG['LIBRUBY']}\" /INCREMENTAL:no /EXPORT:Init_#{module_name}"
       when /mingw32/ then
-        " -Wl,--enable-auto-import -L#{Config::CONFIG['libdir']} -lmsvcrt-ruby18"
+        " -Wl,--enable-auto-import -L#{Config::CONFIG['libdir']} #{Config::CONFIG['LIBRUBYARG_SHARED']}"
       when /i386-cygwin/ then
         ' -L/usr/local/lib -lruby.dll'
       else
