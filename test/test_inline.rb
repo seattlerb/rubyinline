@@ -5,8 +5,9 @@ $0 = __FILE__ if $0 =~ /-e|\(eval\)/
 require 'inline'
 require 'tempfile'
 require 'tmpdir'
-require 'test/unit'
 require 'fileutils' unless defined?(::FileUtils)
+
+require 'minitest/autorun'
 
 File.umask(0)
 
@@ -21,7 +22,7 @@ if $expand_paths then
   $test_inline_path = File.expand_path $test_inline_path
 end
 
-class InlineTestCase < Test::Unit::TestCase
+class InlineTestCase < MiniTest::Unit::TestCase
   def setup
     super
     @rootdir = File.join(Dir.tmpdir, "test_inline.#{$$}")
@@ -793,7 +794,7 @@ extern \"C\" {
   def test_generate_ext_bad_allocate
     @builder.c_singleton "VALUE allocate(VALUE bad) { return Qnil; }"
 
-    e = assert_raise RuntimeError do
+    e = assert_raises RuntimeError do
       @builder.generate_ext
     end
 
