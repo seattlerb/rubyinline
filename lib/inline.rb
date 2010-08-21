@@ -564,6 +564,7 @@ VALUE #{method}_equals(VALUE value) {
 
           cmd = [ Config::CONFIG['LDSHARED'],
                   flags,
+                  Config::CONFIG['DLDFLAGS'],
                   Config::CONFIG['CCDLFLAGS'],
                   Config::CONFIG['CFLAGS'],
                   '-I', hdrdir,
