@@ -14,7 +14,7 @@ Hoe.spec "RubyInline" do
   clean_globs << File.expand_path("~/.ruby_inline")
   spec_extras[:requirements] =
     "A POSIX environment and a compiler for your language."
-  extra_deps << ['ZenTest', '~> 4.3.0'] # for ZenTest mapping
+  extra_deps << ['ZenTest', '~> 4.3'] # for ZenTest mapping
 end
 
 task :test => :clean
