@@ -1,3 +1,9 @@
+=== 3.8.6 / 2010-09-03
+
+* 1 bug fix:
+
+  * Had to fix the ZenTest dependency to work with the whole 4.x series
+
 === 3.8.5 / 2010-09-01
 
 * 1 bug fix:
