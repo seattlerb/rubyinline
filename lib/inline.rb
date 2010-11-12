@@ -247,13 +247,13 @@ module Inline
       method_name = options[:method_name]
       method_name ||= test_to_normal function_name
       return_type = signature['return']
-      arity = signature['arity']
+      arity = options[:arity] || signature['arity']
 
       raise ArgumentError, "too many arguments" if arity > MAGIC_ARITY_THRESHOLD
 
       if expand_types then
         prefix = "static VALUE #{function_name}("
-        if arity == MAGIC_ARITY then
+        if arity <= MAGIC_ARITY then
           prefix += "int argc, VALUE *argv, VALUE self"
         else
           prefix += "VALUE self"
