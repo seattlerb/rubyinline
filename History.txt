@@ -1,3 +1,9 @@
+=== 3.9.0 / 2011-02-18
+
+* 1 minor enhancement:
+
+  * Added arity override option for all C builder methods.
+
 === 3.8.6 / 2010-09-03
 
 * 1 bug fix:
