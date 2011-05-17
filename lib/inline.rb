@@ -510,7 +510,7 @@ VALUE #{method}_equals(VALUE value) {
     # Loads the generated code back into ruby
 
     def load
-      require "#{so_name}" or raise LoadError, "require on #{so_name} failed"
+      Kernel.require "#{so_name}" or raise LoadError, "require on #{so_name} failed"
     end
 
     ##
