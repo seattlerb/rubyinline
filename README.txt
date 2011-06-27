@@ -1,9 +1,8 @@
 = Ruby Inline
 
-* http://rubyforge.org/projects/rubyinline/
-* http://rubyinline.rubyforge.org/RubyInline/
-* http://www.zenspider.com/ZSS/Products/RubyInline/
-* mailto:ryand-ruby@zenspider.com
+rdoc :: http://rubyinline.rubyforge.org/RubyInline/
+home :: http://www.zenspider.com/ZSS/Products/RubyInline/
+repo :: https://github.com/seattlerb/rubyinline
 
 == DESCRIPTION:
 
@@ -33,14 +32,14 @@ See hoe for more details.
 
 == FEATURES/PROBLEMS:
 
-+ Quick and easy inlining of your C or C++ code embedded in your ruby script.
-+ Extendable to work with other languages.
-+ Automatic conversion between ruby and C basic types
-	+ char, unsigned, unsigned int, char *, int, long, unsigned long
-+ inline_c_raw exists for when the automatic conversion isn't sufficient.
-+ Only recompiles if the inlined code has changed.
-+ Pretends to be secure.
-+ Only requires standard ruby libraries, nothing extra to download.
+* Quick and easy inlining of your C or C++ code embedded in your ruby script.
+* Extendable to work with other languages.
+* Automatic conversion between ruby and C basic types
+  * char, unsigned, unsigned int, char *, int, long, unsigned long
+* inline_c_raw exists for when the automatic conversion isn't sufficient.
+* Only recompiles if the inlined code has changed.
+* Pretends to be secure.
+* Only requires standard ruby libraries, nothing extra to download.
 
 == SYNOPSYS:
 
@@ -103,21 +102,21 @@ See hoe for more details.
 
 == REQUIREMENTS:
 
-+ Ruby - 1.8.2 has been used on FreeBSD 4.6+ and MacOSX.
-+ POSIX compliant system (ie pretty much any UNIX, or Cygwin on MS platforms).
-+ A C/C++ compiler (the same one that compiled your ruby interpreter).
-+ test::unit for running tests ( http://testunit.talbott.ws/ ).
+* Ruby - 1.8.2 has been used on FreeBSD 4.6+ and MacOSX.
+* POSIX compliant system (ie pretty much any UNIX, or Cygwin on MS platforms).
+* A C/C++ compiler (the same one that compiled your ruby interpreter).
+* test::unit for running tests ( http://testunit.talbott.ws/ ).
 
 == INSTALL:
 
-+ make test  (optional)
-+ make install
+* make test  (optional)
+* make install
 
 == LICENSE:
 
 (The MIT License)
 
-Copyright (c) 2001-2007 Ryan Davis, Zen Spider Software
+Copyright (c) Ryan Davis, seattle.rb
 
 Permission is hereby granted, free of charge, to any person obtaining
 a copy of this software and associated documentation files (the
