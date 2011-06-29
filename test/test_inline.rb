@@ -412,7 +412,7 @@ static VALUE method_name_equals(VALUE self, VALUE _value) {
       md5 << signature.to_s
     end
 
-    assert_equal("Inline_TestInline__TestC_#{md5.to_s[0,4]}",
+    assert_equal("Inline_TestInline__TestC_#{md5.to_s[0,8]}",
                  @builder.module_name)
   end
 
@@ -774,7 +774,7 @@ static VALUE my_method(VALUE self) {
 #ifdef __cplusplus
 extern \"C\" {
 #endif#{windoze}
-  void Init_Inline_TestInline__TestC_eba5() {
+  void Init_Inline_TestInline__TestC_eba5e545() {
     VALUE c = rb_cObject;
     c = rb_const_get(c, rb_intern("TestInline"));
     c = rb_const_get(c, rb_intern("TestC"));

@@ -365,7 +365,7 @@ module Inline
         module_name = @mod.name.gsub('::','__')
         md5 = Digest::MD5.new
         @sig.keys.sort_by { |x| x.to_s }.each { |m| md5 << m.to_s }
-        @module_name = "Inline_#{module_name}_#{md5.to_s[0,4]}"
+        @module_name = "Inline_#{module_name}_#{md5.to_s[0,8]}"
       end
       @module_name
     end
