@@ -7,6 +7,7 @@ Hoe.add_include_dirs "../../ZenTest/dev/lib"
 Hoe.add_include_dirs "lib"
 
 Hoe.plugin :seattlerb
+Hoe.plugin :isolate
 
 Hoe.spec "RubyInline" do
   developer 'Ryan Davis', 'ryand-ruby@zenspider.com'
@@ -14,7 +15,8 @@ Hoe.spec "RubyInline" do
   clean_globs << File.expand_path("~/.ruby_inline")
   spec_extras[:requirements] =
     "A POSIX environment and a compiler for your language."
-  extra_deps << ['ZenTest', '~> 4.3'] # for ZenTest mapping
+
+  dependency "ZenTest", "~> 4.3" # for ZenTest mapping
 end
 
 task :test => :clean
