@@ -1032,7 +1032,7 @@ class TestModule < InlineTestCase
        "inline dir should have been created")
     matches = Dir[File.join(Inline.directory, "Inline_TestModule_*.c")]
     assert_equal(1, matches.length, "Source should have been created")
-    library_file = matches.first.gsub(/\.c$/) { "." + Config::CONFIG["DLEXT"] }
+    library_file = matches.first.gsub(/\.c$/) { "." + RbConfig::CONFIG["DLEXT"] }
     assert(test(?f, library_file),
        "Library file should have been created")
   end

@@ -374,7 +374,7 @@ module Inline
 
     def so_name
       unless defined? @so_name then
-        @so_name = "#{Inline.directory}/#{module_name}.#{Config::CONFIG["DLEXT"]}"
+        @so_name = "#{Inline.directory}/#{module_name}.#{RbConfig::CONFIG["DLEXT"]}"
       end
       @so_name
     end
@@ -550,7 +550,7 @@ VALUE #{method}_equals(VALUE value) {
         if recompile then
 
           hdrdir = %w(srcdir archdir rubyhdrdir).map { |name|
-            Config::CONFIG[name]
+            RbConfig::CONFIG[name]
           }.find { |dir|
             dir and File.exist? File.join(dir, "/ruby.h")
           } or abort "ERROR: Can't find header dir for ruby. Exiting..."
@@ -564,15 +564,15 @@ VALUE #{method}_equals(VALUE value) {
                             nil
                           end
 
-          cmd = [ Config::CONFIG['LDSHARED'],
+          cmd = [ RbConfig::CONFIG['LDSHARED'],
                   flags,
-                  Config::CONFIG['DLDFLAGS'],
-                  Config::CONFIG['CCDLFLAGS'],
-                  Config::CONFIG['CFLAGS'],
+                  RbConfig::CONFIG['DLDFLAGS'],
+                  RbConfig::CONFIG['CCDLFLAGS'],
+                  RbConfig::CONFIG['CFLAGS'],
                   '-I', hdrdir,
                   config_hdrdir,
-                  '-I', Config::CONFIG['includedir'],
-                  "-L#{Config::CONFIG['libdir']}",
+                  '-I', RbConfig::CONFIG['includedir'],
+                  "-L#{RbConfig::CONFIG['libdir']}",
                   '-o', so_name.inspect,
                   File.expand_path(src_name).inspect,
                   libs,
@@ -594,7 +594,7 @@ VALUE #{method}_equals(VALUE value) {
 
           # NOTE: manifest embedding is only required when using VC8 ruby
           # build or compiler.
-          # Errors from this point should be ignored if Config::CONFIG['arch']
+          # Errors from this point should be ignored if RbConfig::CONFIG['arch']
           # (RUBY_PLATFORM) matches 'i386-mswin32_80'
           if WINDOZE and RUBY_PLATFORM =~ /_80$/ then
             Dir.chdir Inline.directory do
@@ -623,9 +623,9 @@ VALUE #{method}_equals(VALUE value) {
       # gawd windoze land sucks
       case RUBY_PLATFORM
       when /mswin32/ then
-        " -link /LIBPATH:\"#{Config::CONFIG['libdir']}\" /DEFAULTLIB:\"#{Config::CONFIG['LIBRUBY']}\" /INCREMENTAL:no /EXPORT:Init_#{module_name}"
+        " -link /LIBPATH:\"#{RbConfig::CONFIG['libdir']}\" /DEFAULTLIB:\"#{RbConfig::CONFIG['LIBRUBY']}\" /INCREMENTAL:no /EXPORT:Init_#{module_name}"
       when /mingw32/ then
-        " -Wl,--enable-auto-import -L#{Config::CONFIG['libdir']} -lmsvcrt-ruby18"
+        " -Wl,--enable-auto-import -L#{RbConfig::CONFIG['libdir']} -lmsvcrt-ruby18"
       when /i386-cygwin/ then
         ' -L/usr/local/lib -lruby.dll'
       else
