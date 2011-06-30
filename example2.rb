@@ -14,10 +14,9 @@ class MyTest
     builder.add_compile_flags %q(-x c++)
     builder.add_link_flags %q(-lstdc++)
 
+    builder.include "<iostream>"
+
     builder.c "
-// stupid c++ comment
-#include <iostream>
-/* stupid c comment */
 static
 void
 hello(int i) {

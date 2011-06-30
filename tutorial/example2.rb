@@ -7,15 +7,15 @@ class Array
   inline do |builder|
     builder.c_raw "
       static VALUE average(int argc, VALUE *argv, VALUE self) {
-        double result;
+        double result = 0;
         long  i, len;
-        VALUE *arr = RARRAY(self)->ptr;
-        len = RARRAY(self)->len;
-        
+        VALUE *arr = RARRAY_PTR(self);
+        len = RARRAY_LEN(self);
+
         for(i=0; i<len; i++) {
           result += NUM2DBL(arr[i]);
         }
-  
+
         return rb_float_new(result/(double)len);
       }
     "
@@ -70,7 +70,7 @@ $stderr.puts ""
 
 #   & time ruby ./example2.rb 5 100000
 #   .....
-#  
+#
 #   real 0m1.403s
 #   user 0m1.120s
 #   sys  0m0.070s
