@@ -285,12 +285,14 @@ module Inline
       delta = if result =~ /\A(static.*?\{)/m then
                 $1.split(/\n/).size
               else
-                warn "WAR\NING: Can't find signature in #{result.inspect}\n" unless $TESTING
+                msg = "WAR\NING: Can't find signature in #{result.inspect}\n"
+                warn msg unless $TESTING
                 0
               end
 
       file, line = caller[1].split(/:/)
-      result = "# line #{line.to_i + delta} \"#{file}\"\n" + result unless $DEBUG and not $TESTING
+      result = "# line #{line.to_i + delta} \"#{file}\"\n" + result unless
+        $DEBUG and not $TESTING
 
       @src << result
       @sig[function_name] = [arity,singleton,method_name]
@@ -365,7 +367,7 @@ module Inline
         module_name = @mod.name.gsub('::','__')
         md5 = Digest::MD5.new
         @sig.keys.sort_by { |x| x.to_s }.each { |m| md5 << m.to_s }
-        @module_name = "Inline_#{module_name}_#{md5.to_s[0,4]}"
+        @module_name = "Inline_#{module_name}_#{md5}"
       end
       @module_name
     end
