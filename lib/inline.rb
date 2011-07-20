@@ -498,7 +498,7 @@ VALUE #{method}_equals(VALUE value) {
     def load_cache
       begin
         file = File.join("inline", File.basename(so_name))
-        if require file then
+        if Kernel.require file then
           dir = Inline.directory
           warn "WAR\NING: #{dir} exists but is not being used" if test ?d, dir and $VERBOSE
           return true
@@ -512,7 +512,7 @@ VALUE #{method}_equals(VALUE value) {
     # Loads the generated code back into ruby
 
     def load
-      require "#{so_name}" or raise LoadError, "require on #{so_name} failed"
+      Kernel.require "#{so_name}" or raise LoadError, "require on #{so_name} failed"
     end
 
     ##
