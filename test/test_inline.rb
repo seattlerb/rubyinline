@@ -80,7 +80,8 @@ class TestInline < InlineTestCase
   end
 
   def test_directory
-    inlinedir = File.join(@rootdir, ".ruby_inline")
+    version = "#{Gem.ruby_engine}-#{RbConfig::CONFIG['ruby_version']}"
+    inlinedir = File.join(@rootdir, ".ruby_inline", version)
     assert_equal(inlinedir, Inline.directory)
   end
 

@@ -134,11 +134,14 @@ module Inline
   end
 
   def self.directory
-    directory = File.join(rootdir, ".ruby_inline")
-    unless defined? @@directory and directory == @@directory
-      @@directory = File.join(self.rootdir, ".ruby_inline")
+    unless defined? @@directory then
+      version = "#{Gem.ruby_engine}-#{RbConfig::CONFIG['ruby_version']}"
+
+      @@directory = File.join(self.rootdir, ".ruby_inline", version)
     end
-    Dir.assert_secure directory
+
+    Dir.assert_secure @@directory
+
     @@directory
   end
 
@@ -525,7 +528,7 @@ VALUE #{method}_equals(VALUE value) {
 
         unless File.directory? Inline.directory then
           warn "NOTE: creating #{Inline.directory} for RubyInline" if $DEBUG
-          Dir.mkdir Inline.directory, 0700
+          FileUtils.mkdir_p Inline.directory, :mode => 0700
         end
 
         src_name = "#{Inline.directory}/#{module_name}.c"
