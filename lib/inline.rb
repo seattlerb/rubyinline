@@ -628,7 +628,8 @@ VALUE #{method}_equals(VALUE value) {
       when /mswin32/ then
         " -link /LIBPATH:\"#{RbConfig::CONFIG['libdir']}\" /DEFAULTLIB:\"#{RbConfig::CONFIG['LIBRUBY']}\" /INCREMENTAL:no /EXPORT:Init_#{module_name}"
       when /mingw32/ then
-        " -Wl,--enable-auto-import -L#{RbConfig::CONFIG['libdir']} -lmsvcrt-ruby18"
+        c = RbConfig::CONFIG
+        " -Wl,--enable-auto-import -L#{c['libdir']} -l#{c['RUBY_SO_NAME']}"
       when /i386-cygwin/ then
         ' -L/usr/local/lib -lruby.dll'
       else
