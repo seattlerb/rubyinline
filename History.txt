@@ -1,3 +1,15 @@
+=== 3.10.0 / 2011-08-30
+
+* 2 minor enhancements:
+
+  * Added engined/versioned subdir to .ruby_inline to help with multiple-ruby usage. (valodzka)
+  * Extended file/module naming to avoid hash collisions. (apohllo)
+
+* 2 bug fixes:
+
+  * Fixed examples for 1.9 compatibility.
+  * Use RbConfig instead of Config. (apohllo)
+
 === 3.9.0 / 2011-02-18
 
 * 1 minor enhancement:

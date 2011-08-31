@@ -1,6 +1,6 @@
 = Ruby Inline
 
-rdoc :: http://rubyinline.rubyforge.org/RubyInline/
+rdoc :: http://docs.seattlerb.org/RubyInline/
 home :: http://www.zenspider.com/ZSS/Products/RubyInline/
 repo :: https://github.com/seattlerb/rubyinline
 
