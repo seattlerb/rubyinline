@@ -1,3 +1,9 @@
+=== 3.10.1 / 2011-09-13
+
+* 1 bug fix:
+
+  * Fix crap_for_windoze to use RbConfig for RUBY_SO_NAME. (jasonrickman)
+
 === 3.10.0 / 2011-08-30
 
 * 2 minor enhancements:
