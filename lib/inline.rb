@@ -792,13 +792,6 @@ VALUE #{method}_equals(VALUE value) {
 end # module Inline
 
 class Module
-
-  ##
-  # options is a hash that allows you to pass extra data to your
-  # builder.  The only key that is guaranteed to exist is :testing.
-
-  attr_reader :options
-
   ##
   # Extends the Module class to have an inline method. The default
   # language/builder used is C, but can be specified with the +lang+
@@ -824,7 +817,6 @@ class Module
                       Inline.const_get(lang)
                     end
 
-    @options = options
     builder = builder_class.new self
 
     yield builder
