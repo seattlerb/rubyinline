@@ -65,7 +65,7 @@ class CompilationError < RuntimeError; end
 # the current namespace.
 
 module Inline
-  VERSION = '3.8.4'
+  VERSION = '3.10.1'
 
   WINDOZE  = /mswin|mingw/ =~ RUBY_PLATFORM
   RUBINIUS = defined? RUBY_ENGINE
@@ -134,11 +134,14 @@ module Inline
   end
 
   def self.directory
-    directory = File.join(rootdir, ".ruby_inline")
-    unless defined? @@directory and directory == @@directory
-      @@directory = File.join(self.rootdir, ".ruby_inline")
+    unless defined? @@directory then
+      version = "#{Gem.ruby_engine}-#{RbConfig::CONFIG['ruby_version']}"
+
+      @@directory = File.join(self.rootdir, ".ruby_inline", version)
     end
-    Dir.assert_secure directory
+
+    Dir.assert_secure @@directory
+
     @@directory
   end
 
@@ -247,13 +250,13 @@ module Inline
       method_name = options[:method_name]
       method_name ||= test_to_normal function_name
       return_type = signature['return']
-      arity = signature['arity']
+      arity = options[:arity] || signature['arity']
 
       raise ArgumentError, "too many arguments" if arity > MAGIC_ARITY_THRESHOLD
 
       if expand_types then
         prefix = "static VALUE #{function_name}("
-        if arity == MAGIC_ARITY then
+        if arity <= MAGIC_ARITY then
           prefix += "int argc, VALUE *argv, VALUE self"
         else
           prefix += "VALUE self"
@@ -285,12 +288,14 @@ module Inline
       delta = if result =~ /\A(static.*?\{)/m then
                 $1.split(/\n/).size
               else
-                warn "WAR\NING: Can't find signature in #{result.inspect}\n" unless $TESTING
+                msg = "WAR\NING: Can't find signature in #{result.inspect}\n"
+                warn msg unless $TESTING
                 0
               end
 
       file, line = caller[1].split(/:/)
-      result = "# line #{line.to_i + delta} \"#{file}\"\n" + result unless $DEBUG and not $TESTING
+      result = "# line #{line.to_i + delta} \"#{file}\"\n" + result unless
+        $DEBUG and not $TESTING
 
       @src << result
       @sig[function_name] = [arity,singleton,method_name]
@@ -365,14 +370,14 @@ module Inline
         module_name = @mod.name.gsub('::','__')
         md5 = Digest::MD5.new
         @sig.keys.sort_by { |x| x.to_s }.each { |m| md5 << m.to_s }
-        @module_name = "Inline_#{module_name}_#{md5.to_s[0,4]}"
+        @module_name = "Inline_#{module_name}_#{md5}"
       end
       @module_name
     end
 
     def so_name
       unless defined? @so_name then
-        @so_name = "#{Inline.directory}/#{module_name}.#{Config::CONFIG["DLEXT"]}"
+        @so_name = "#{Inline.directory}/#{module_name}.#{RbConfig::CONFIG["DLEXT"]}"
       end
       @so_name
     end
@@ -523,7 +528,7 @@ VALUE #{method}_equals(VALUE value) {
 
         unless File.directory? Inline.directory then
           warn "NOTE: creating #{Inline.directory} for RubyInline" if $DEBUG
-          Dir.mkdir Inline.directory, 0700
+          FileUtils.mkdir_p Inline.directory, :mode => 0700
         end
 
         src_name = "#{Inline.directory}/#{module_name}.c"
@@ -548,7 +553,7 @@ VALUE #{method}_equals(VALUE value) {
         if recompile then
 
           hdrdir = %w(srcdir archdir rubyhdrdir).map { |name|
-            Config::CONFIG[name]
+            RbConfig::CONFIG[name]
           }.find { |dir|
             dir and File.exist? File.join(dir, "/ruby.h")
           } or abort "ERROR: Can't find header dir for ruby. Exiting..."
@@ -563,17 +568,19 @@ VALUE #{method}_equals(VALUE value) {
                           end
                           
           ldshared = Config::CONFIG['LDSHARED']
-          # strip off some extra gunk in 1.9
+          # strip off some extra gunk in mingw 1.9
           ldshared = ldshared.gsub(/\$\(.*\)/, '') if RUBY_PLATFORM =~ /mingw/
-
+          dldflags =  RbConfig::CONFIG['DLDFLAGS']
+          dldflags = dldflags.gsub(/\$\(.*\)/, '') if RUBY_PLATFORM =~ /mingw/
           cmd = [ ldshared,
                   flags,
-                  Config::CONFIG['CCDLFLAGS'],
-                  Config::CONFIG['CFLAGS'],
+                  dldflags,
+                  RbConfig::CONFIG['CCDLFLAGS'],
+                  RbConfig::CONFIG['CFLAGS'],
                   '-I', hdrdir,
                   config_hdrdir,
-                  '-I', Config::CONFIG['includedir'],
-                  "-L#{Config::CONFIG['libdir']}",
+                  '-I', RbConfig::CONFIG['includedir'],
+                  "-L#{RbConfig::CONFIG['libdir']}",
                   '-o', so_name.inspect,
                   File.expand_path(src_name).inspect,
                   libs,
@@ -596,7 +603,7 @@ VALUE #{method}_equals(VALUE value) {
 
           # NOTE: manifest embedding is only required when using VC8 ruby
           # build or compiler.
-          # Errors from this point should be ignored if Config::CONFIG['arch']
+          # Errors from this point should be ignored if RbConfig::CONFIG['arch']
           # (RUBY_PLATFORM) matches 'i386-mswin32_80'
           if WINDOZE and RUBY_PLATFORM =~ /_80$/ then
             Dir.chdir Inline.directory do
@@ -625,9 +632,10 @@ VALUE #{method}_equals(VALUE value) {
       # gawd windoze land sucks
       case RUBY_PLATFORM
       when /mswin32/ then
-        " -link /LIBPATH:\"#{Config::CONFIG['libdir']}\" /DEFAULTLIB:\"#{Config::CONFIG['LIBRUBY']}\" /INCREMENTAL:no /EXPORT:Init_#{module_name}"
+        " -link /LIBPATH:\"#{RbConfig::CONFIG['libdir']}\" /DEFAULTLIB:\"#{RbConfig::CONFIG['LIBRUBY']}\" /INCREMENTAL:no /EXPORT:Init_#{module_name}"
       when /mingw32/ then
-        " -Wl,--enable-auto-import -L#{Config::CONFIG['libdir']} #{Config::CONFIG['LIBRUBYARG_SHARED']}"
+        c = RbConfig::CONFIG
+        " -Wl,--enable-auto-import -L#{c['libdir']} -l#{c['RUBY_SO_NAME']} #{c['LIBRUBYARG_SHARED']}"
       when /i386-cygwin/ then
         ' -L/usr/local/lib -lruby.dll'
       else
@@ -790,13 +798,6 @@ VALUE #{method}_equals(VALUE value) {
 end # module Inline
 
 class Module
-
-  ##
-  # options is a hash that allows you to pass extra data to your
-  # builder.  The only key that is guaranteed to exist is :testing.
-
-  attr_reader :options
-
   ##
   # Extends the Module class to have an inline method. The default
   # language/builder used is C, but can be specified with the +lang+
@@ -822,7 +823,6 @@ class Module
                       Inline.const_get(lang)
                     end
 
-    @options = options
     builder = builder_class.new self
 
     yield builder

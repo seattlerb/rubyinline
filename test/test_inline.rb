@@ -5,8 +5,9 @@ $0 = __FILE__ if $0 =~ /-e|\(eval\)/
 require 'inline'
 require 'tempfile'
 require 'tmpdir'
-require 'test/unit'
 require 'fileutils' unless defined?(::FileUtils)
+
+require 'minitest/autorun'
 
 File.umask(0)
 
@@ -21,7 +22,7 @@ if $expand_paths then
   $test_inline_path = File.expand_path $test_inline_path
 end
 
-class InlineTestCase < Test::Unit::TestCase
+class InlineTestCase < MiniTest::Unit::TestCase
   def setup
     super
     @rootdir = File.join(Dir.tmpdir, "test_inline.#{$$}")
@@ -79,7 +80,8 @@ class TestInline < InlineTestCase
   end
 
   def test_directory
-    inlinedir = File.join(@rootdir, ".ruby_inline")
+    version = "#{Gem.ruby_engine}-#{RbConfig::CONFIG['ruby_version']}"
+    inlinedir = File.join(@rootdir, ".ruby_inline", version)
     assert_equal(inlinedir, Inline.directory)
   end
 
@@ -411,8 +413,7 @@ static VALUE method_name_equals(VALUE self, VALUE _value) {
       md5 << signature.to_s
     end
 
-    assert_equal("Inline_TestInline__TestC_#{md5.to_s[0,4]}",
-                 @builder.module_name)
+    assert_equal("Inline_TestInline__TestC_#{md5}", @builder.module_name)
   end
 
   def test_module_name_0_methods
@@ -773,7 +774,7 @@ static VALUE my_method(VALUE self) {
 #ifdef __cplusplus
 extern \"C\" {
 #endif#{windoze}
-  void Init_Inline_TestInline__TestC_eba5() {
+  void Init_Inline_TestInline__TestC_eba5e5454322e22fe2310198ef14e43f() {
     VALUE c = rb_cObject;
     c = rb_const_get(c, rb_intern("TestInline"));
     c = rb_const_get(c, rb_intern("TestC"));
@@ -793,7 +794,7 @@ extern \"C\" {
   def test_generate_ext_bad_allocate
     @builder.c_singleton "VALUE allocate(VALUE bad) { return Qnil; }"
 
-    e = assert_raise RuntimeError do
+    e = assert_raises RuntimeError do
       @builder.generate_ext
     end
 
@@ -1032,7 +1033,7 @@ class TestModule < InlineTestCase
        "inline dir should have been created")
     matches = Dir[File.join(Inline.directory, "Inline_TestModule_*.c")]
     assert_equal(1, matches.length, "Source should have been created")
-    library_file = matches.first.gsub(/\.c$/) { "." + Config::CONFIG["DLEXT"] }
+    library_file = matches.first.gsub(/\.c$/) { "." + RbConfig::CONFIG["DLEXT"] }
     assert(test(?f, library_file),
        "Library file should have been created")
   end
