@@ -566,10 +566,15 @@ VALUE #{method}_equals(VALUE value) {
                           else
                             nil
                           end
-
-          cmd = [ RbConfig::CONFIG['LDSHARED'],
+                          
+          ldshared = Config::CONFIG['LDSHARED']
+          # strip off some extra gunk in mingw 1.9
+          ldshared = ldshared.gsub(/\$\(.*\)/, '') if RUBY_PLATFORM =~ /mingw/
+          dldflags =  RbConfig::CONFIG['DLDFLAGS']
+          dldflags = dldflags.gsub(/\$\(.*\)/, '') if RUBY_PLATFORM =~ /mingw/
+          cmd = [ ldshared,
                   flags,
-                  RbConfig::CONFIG['DLDFLAGS'],
+                  dldflags,
                   RbConfig::CONFIG['CCDLFLAGS'],
                   RbConfig::CONFIG['CFLAGS'],
                   '-I', hdrdir,
@@ -581,11 +586,12 @@ VALUE #{method}_equals(VALUE value) {
                   libs,
                   crap_for_windoze ].join(' ')
 
+          
           # TODO: remove after osx 10.5.2
           cmd += ' -flat_namespace -undefined suppress' if
             RUBY_PLATFORM =~ /darwin9\.[01]/
           cmd += " 2> #{DEV_NULL}" if $TESTING and not $DEBUG
-
+          #cmd = "bash -c \"#{cmd.gsub('"', '\\"')}\""
           warn "Building #{so_name} with '#{cmd}'" if $DEBUG
           result = `#{cmd}`
           warn "Output:\n#{result}" if $DEBUG
@@ -629,7 +635,7 @@ VALUE #{method}_equals(VALUE value) {
         " -link /LIBPATH:\"#{RbConfig::CONFIG['libdir']}\" /DEFAULTLIB:\"#{RbConfig::CONFIG['LIBRUBY']}\" /INCREMENTAL:no /EXPORT:Init_#{module_name}"
       when /mingw32/ then
         c = RbConfig::CONFIG
-        " -Wl,--enable-auto-import -L#{c['libdir']} -l#{c['RUBY_SO_NAME']}"
+        " -Wl,--enable-auto-import -L#{c['libdir']} -l#{c['RUBY_SO_NAME']} #{c['LIBRUBYARG_SHARED']}"
       when /i386-cygwin/ then
         ' -L/usr/local/lib -lruby.dll'
       else
