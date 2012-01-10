@@ -572,6 +572,7 @@ VALUE #{method}_equals(VALUE value) {
                   RbConfig::CONFIG['DLDFLAGS'],
                   RbConfig::CONFIG['CCDLFLAGS'],
                   RbConfig::CONFIG['CFLAGS'],
+                  RbConfig::CONFIG['LDFLAGS'],
                   '-I', hdrdir,
                   config_hdrdir,
                   '-I', RbConfig::CONFIG['includedir'],
