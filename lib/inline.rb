@@ -582,6 +582,9 @@ VALUE #{method}_equals(VALUE value) {
                   libs,
                   crap_for_windoze ].join(' ')
 
+         # strip off some makefile macros for mingw 1.9
+         cmd = cmd.gsub(/\$\(.*\)/, '') if RUBY_PLATFORM =~ /mingw/
+        
           # TODO: remove after osx 10.5.2
           cmd += ' -flat_namespace -undefined suppress' if
             RUBY_PLATFORM =~ /darwin9\.[01]/
