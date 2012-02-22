@@ -1,3 +1,9 @@
+=== 3.11.2 / 2012-02-22
+
+* 1 bug fix:
+
+  * Added terrible hack to fix mingw's embedded make macros in rbconfig. (rdp)
+
 === 3.11.1 / 2012-01-25
 
 * 1 bug fix:
