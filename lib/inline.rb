@@ -572,7 +572,7 @@ VALUE #{method}_equals(VALUE value) {
                             nil
                           end
 
-          if WINDOZE
+          if WINDOZE and RUBY_PLATFORM =~ /mswin/
             cmd = [ RbConfig::CONFIG['LDSHARED'],
                     flags,
                     RbConfig::CONFIG['CFLAGS'],
