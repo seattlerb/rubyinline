@@ -377,7 +377,11 @@ module Inline
 
     def so_name
       unless defined? @so_name then
-        @so_name = "#{Inline.directory}/#{module_name}.#{RbConfig::CONFIG["DLEXT"]}"
+        if WINDOZE
+          @so_name = "#{Inline.directory}/#{module_name}.dll"
+        else
+          @so_name = "#{Inline.directory}/#{module_name}.#{RbConfig::CONFIG["DLEXT"]}"
+        end
       end
       @so_name
     end
@@ -567,24 +571,40 @@ VALUE #{method}_equals(VALUE value) {
                             nil
                           end
 
-          cmd = [ RbConfig::CONFIG['LDSHARED'],
-                  flags,
-                  RbConfig::CONFIG['DLDFLAGS'],
-                  RbConfig::CONFIG['CCDLFLAGS'],
-                  RbConfig::CONFIG['CFLAGS'],
-                  RbConfig::CONFIG['LDFLAGS'],
-                  '-I', hdrdir,
-                  config_hdrdir,
-                  '-I', RbConfig::CONFIG['includedir'],
-                  "-L#{RbConfig::CONFIG['libdir']}",
-                  '-o', so_name.inspect,
-                  File.expand_path(src_name).inspect,
-                  libs,
-                  crap_for_windoze ].join(' ')
+          if WINDOZE
+            cmd = [ RbConfig::CONFIG['LDSHARED'],
+                    flags,
+                    RbConfig::CONFIG['CFLAGS'],
+                    '-I', hdrdir,
+                    config_hdrdir,
+                    '-I', RbConfig::CONFIG['includedir'],
+                    File.expand_path(src_name).inspect,
+                    libs,
+                    crap_for_windoze,
+                    RbConfig::CONFIG['LDFLAGS'],
+                    RbConfig::CONFIG['CCDLFLAGS']
+              ].join(' ')
+          else
+            cmd = [ RbConfig::CONFIG['LDSHARED'],
+                    flags,
+                    RbConfig::CONFIG['DLDFLAGS'],
+                    RbConfig::CONFIG['CCDLFLAGS'],
+                    RbConfig::CONFIG['CFLAGS'],
+                    RbConfig::CONFIG['LDFLAGS'],
+                    '-I', hdrdir,
+                    config_hdrdir,
+                    '-I', RbConfig::CONFIG['includedir'],
+                    "-L#{RbConfig::CONFIG['libdir']}",
+                    '-o', so_name.inspect,
+                    File.expand_path(src_name).inspect,
+                    libs,
+                    crap_for_windoze
+              ].join(' ')
+          end
 
          # strip off some makefile macros for mingw 1.9
          cmd = cmd.gsub(/\$\(.*\)/, '') if RUBY_PLATFORM =~ /mingw/
-        
+
           # TODO: remove after osx 10.5.2
           cmd += ' -flat_namespace -undefined suppress' if
             RUBY_PLATFORM =~ /darwin9\.[01]/
