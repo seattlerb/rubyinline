@@ -377,11 +377,7 @@ module Inline
 
     def so_name
       unless defined? @so_name then
-        if WINDOZE
-          @so_name = "#{Inline.directory}/#{module_name}.dll"
-        else
-          @so_name = "#{Inline.directory}/#{module_name}.#{RbConfig::CONFIG["DLEXT"]}"
-        end
+        @so_name = "#{Inline.directory}/#{module_name}.#{RbConfig::CONFIG["DLEXT"]}"
       end
       @so_name
     end
@@ -657,7 +653,7 @@ VALUE #{method}_equals(VALUE value) {
       # gawd windoze land sucks
       case RUBY_PLATFORM
       when /mswin32/ then
-        " -link /LIBPATH:\"#{RbConfig::CONFIG['libdir']}\" /DEFAULTLIB:\"#{RbConfig::CONFIG['LIBRUBY']}\" /INCREMENTAL:no /EXPORT:Init_#{module_name}"
+        " -link /OUT:\"#{self.so_name}\" /LIBPATH:\"#{RbConfig::CONFIG['libdir']}\" /DEFAULTLIB:\"#{RbConfig::CONFIG['LIBRUBY']}\" /INCREMENTAL:no /EXPORT:Init_#{module_name}"
       when /mingw32/ then
         c = RbConfig::CONFIG
         " -Wl,--enable-auto-import -L#{c['libdir']} -l#{c['RUBY_SO_NAME']}"
