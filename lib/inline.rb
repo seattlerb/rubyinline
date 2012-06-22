@@ -293,7 +293,12 @@ module Inline
                 0
               end
 
-      file, line = caller[1].split(/:/)
+      if WINDOZE
+        file, line = caller[1].split(/:\d/)
+      else
+        file, line = caller[1].split(/:/)
+      end
+
       result = "# line #{line.to_i + delta} \"#{file}\"\n" + result unless
         $DEBUG and not $TESTING
 
