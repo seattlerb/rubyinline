@@ -613,6 +613,8 @@ VALUE #{method}_equals(VALUE value) {
 
           warn "Building #{so_name} with '#{cmd}'" if $DEBUG
 
+          result = nil # Silence 1.9.x unused variable warnings
+
           if WINDOZE
             Dir.chdir(Inline.directory){ result = `#{cmd}` }
           else
