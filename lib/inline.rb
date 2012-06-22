@@ -611,8 +611,15 @@ VALUE #{method}_equals(VALUE value) {
           cmd += " 2> #{DEV_NULL}" if $TESTING and not $DEBUG
 
           warn "Building #{so_name} with '#{cmd}'" if $DEBUG
-          result = `#{cmd}`
+
+          if WINDOZE
+            Dir.chdir(Inline.directory){ result = `#{cmd}` }
+          else
+            result = `#{cmd}`
+          end
+
           warn "Output:\n#{result}" if $DEBUG
+
           if $? != 0 then
             bad_src_name = src_name + ".bad"
             File.rename src_name, bad_src_name
