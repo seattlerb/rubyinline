@@ -293,7 +293,8 @@ module Inline
                 0
               end
 
-      file, line = caller[1].split(/:/)
+      file, line = /(.*?):(\d+)/.match(caller[1]).captures
+
       result = "# line #{line.to_i + delta} \"#{file}\"\n" + result unless
         $DEBUG and not $TESTING
 
@@ -567,32 +568,57 @@ VALUE #{method}_equals(VALUE value) {
                             nil
                           end
 
-          cmd = [ RbConfig::CONFIG['LDSHARED'],
-                  flags,
-                  RbConfig::CONFIG['DLDFLAGS'],
-                  RbConfig::CONFIG['CCDLFLAGS'],
-                  RbConfig::CONFIG['CFLAGS'],
-                  RbConfig::CONFIG['LDFLAGS'],
-                  '-I', hdrdir,
-                  config_hdrdir,
-                  '-I', RbConfig::CONFIG['includedir'],
-                  "-L#{RbConfig::CONFIG['libdir']}",
-                  '-o', so_name.inspect,
-                  File.expand_path(src_name).inspect,
-                  libs,
-                  crap_for_windoze ].join(' ')
+          if WINDOZE and RUBY_PLATFORM =~ /mswin/
+            cmd = [ RbConfig::CONFIG['LDSHARED'],
+                    flags,
+                    RbConfig::CONFIG['CFLAGS'],
+                    '-I', hdrdir,
+                    config_hdrdir,
+                    '-I', RbConfig::CONFIG['includedir'],
+                    File.expand_path(src_name).inspect,
+                    libs,
+                    crap_for_windoze,
+                    RbConfig::CONFIG['LDFLAGS'],
+                    RbConfig::CONFIG['CCDLFLAGS']
+              ].join(' ')
+          else
+            cmd = [ RbConfig::CONFIG['LDSHARED'],
+                    flags,
+                    RbConfig::CONFIG['DLDFLAGS'],
+                    RbConfig::CONFIG['CCDLFLAGS'],
+                    RbConfig::CONFIG['CFLAGS'],
+                    RbConfig::CONFIG['LDFLAGS'],
+                    '-I', hdrdir,
+                    config_hdrdir,
+                    '-I', RbConfig::CONFIG['includedir'],
+                    "-L#{RbConfig::CONFIG['libdir']}",
+                    '-o', so_name.inspect,
+                    File.expand_path(src_name).inspect,
+                    libs,
+                    crap_for_windoze
+              ].join(' ')
+          end
 
          # strip off some makefile macros for mingw 1.9
          cmd = cmd.gsub(/\$\(.*\)/, '') if RUBY_PLATFORM =~ /mingw/
-        
+
           # TODO: remove after osx 10.5.2
           cmd += ' -flat_namespace -undefined suppress' if
             RUBY_PLATFORM =~ /darwin9\.[01]/
           cmd += " 2> #{DEV_NULL}" if $TESTING and not $DEBUG
 
           warn "Building #{so_name} with '#{cmd}'" if $DEBUG
-          result = `#{cmd}`
+
+          result = nil # Silence 1.9.x unused variable warnings
+
+          if WINDOZE
+            Dir.chdir(Inline.directory){ result = `#{cmd}` }
+          else
+            result = `#{cmd}`
+          end
+
           warn "Output:\n#{result}" if $DEBUG
+
           if $? != 0 then
             bad_src_name = src_name + ".bad"
             File.rename src_name, bad_src_name
@@ -630,7 +656,7 @@ VALUE #{method}_equals(VALUE value) {
       # gawd windoze land sucks
       case RUBY_PLATFORM
       when /mswin32/ then
-        " -link /LIBPATH:\"#{RbConfig::CONFIG['libdir']}\" /DEFAULTLIB:\"#{RbConfig::CONFIG['LIBRUBY']}\" /INCREMENTAL:no /EXPORT:Init_#{module_name}"
+        " -link /OUT:\"#{self.so_name}\" /LIBPATH:\"#{RbConfig::CONFIG['libdir']}\" /DEFAULTLIB:\"#{RbConfig::CONFIG['LIBRUBY']}\" /INCREMENTAL:no /EXPORT:Init_#{module_name}"
       when /mingw32/ then
         c = RbConfig::CONFIG
         " -Wl,--enable-auto-import -L#{c['libdir']} -l#{c['RUBY_SO_NAME']}"
