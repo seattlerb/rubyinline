@@ -293,11 +293,7 @@ module Inline
                 0
               end
 
-      if WINDOZE
-        file, line = caller[1].split(/:\d/)
-      else
-        file, line = caller[1].split(/:/)
-      end
+      file, line = /(.*?):(\d+)/.match(caller[1]).captures
 
       result = "# line #{line.to_i + delta} \"#{file}\"\n" + result unless
         $DEBUG and not $TESTING
