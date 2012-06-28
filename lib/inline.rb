@@ -293,7 +293,8 @@ module Inline
                 0
               end
 
-      file, line = caller[1].split(/:/)
+      file, line = $1, $2 if caller[1] =~ /(.*?):(\d+)/
+
       result = "# line #{line.to_i + delta} \"#{file}\"\n" + result unless
         $DEBUG and not $TESTING
 
@@ -567,32 +568,44 @@ VALUE #{method}_equals(VALUE value) {
                             nil
                           end
 
+          windoze = WINDOZE and RUBY_PLATFORM =~ /mswin/
+          sane = ! windoze
           cmd = [ RbConfig::CONFIG['LDSHARED'],
                   flags,
-                  RbConfig::CONFIG['DLDFLAGS'],
-                  RbConfig::CONFIG['CCDLFLAGS'],
+                  (RbConfig::CONFIG['DLDFLAGS']         if sane),
+                  (RbConfig::CONFIG['CCDLFLAGS']        if sane),
                   RbConfig::CONFIG['CFLAGS'],
-                  RbConfig::CONFIG['LDFLAGS'],
+                  (RbConfig::CONFIG['LDFLAGS']          if sane),
                   '-I', hdrdir,
                   config_hdrdir,
                   '-I', RbConfig::CONFIG['includedir'],
-                  "-L#{RbConfig::CONFIG['libdir']}",
-                  '-o', so_name.inspect,
+                  ("-L#{RbConfig::CONFIG['libdir']}"    if sane),
+                  (['-o', so_name.inspect]              if sane),
                   File.expand_path(src_name).inspect,
                   libs,
-                  crap_for_windoze ].join(' ')
+                  crap_for_windoze,
+                  (RbConfig::CONFIG['LDFLAGS']          if windoze),
+                  (RbConfig::CONFIG['CCDLFLAGS']        if windoze),
+                ].compact.join(' ')
 
          # strip off some makefile macros for mingw 1.9
          cmd = cmd.gsub(/\$\(.*\)/, '') if RUBY_PLATFORM =~ /mingw/
-        
+
           # TODO: remove after osx 10.5.2
           cmd += ' -flat_namespace -undefined suppress' if
             RUBY_PLATFORM =~ /darwin9\.[01]/
           cmd += " 2> #{DEV_NULL}" if $TESTING and not $DEBUG
 
           warn "Building #{so_name} with '#{cmd}'" if $DEBUG
-          result = `#{cmd}`
+
+          result = if WINDOZE
+                     Dir.chdir(Inline.directory) { `#{cmd}` }
+                   else
+                     `#{cmd}`
+                   end
+
           warn "Output:\n#{result}" if $DEBUG
+
           if $? != 0 then
             bad_src_name = src_name + ".bad"
             File.rename src_name, bad_src_name
@@ -630,7 +643,7 @@ VALUE #{method}_equals(VALUE value) {
       # gawd windoze land sucks
       case RUBY_PLATFORM
       when /mswin32/ then
-        " -link /LIBPATH:\"#{RbConfig::CONFIG['libdir']}\" /DEFAULTLIB:\"#{RbConfig::CONFIG['LIBRUBY']}\" /INCREMENTAL:no /EXPORT:Init_#{module_name}"
+        " -link /OUT:\"#{self.so_name}\" /LIBPATH:\"#{RbConfig::CONFIG['libdir']}\" /DEFAULTLIB:\"#{RbConfig::CONFIG['LIBRUBY']}\" /INCREMENTAL:no /EXPORT:Init_#{module_name}"
       when /mingw32/ then
         c = RbConfig::CONFIG
         " -Wl,--enable-auto-import -L#{c['libdir']} -l#{c['RUBY_SO_NAME']}"
