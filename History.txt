@@ -1,3 +1,9 @@
+=== 3.11.3 / 2012-07-05
+
+* 1 bug fix:
+
+  * Fixes for non-mingw windoze builds. (imperator)
+
 === 3.11.2 / 2012-02-22
 
 * 1 bug fix:
