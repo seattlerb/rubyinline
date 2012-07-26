@@ -52,8 +52,6 @@ require "digest/md5"
 require 'fileutils'
 require 'rubygems'
 
-require 'zentest_mapping'
-
 $TESTING = false unless defined? $TESTING
 
 class CompilationError < RuntimeError; end
@@ -153,9 +151,6 @@ module Inline
   # and #remove_type_converter.
 
   class C
-
-    include ZenTestMapping
-
     MAGIC_ARITY_THRESHOLD = 15
     MAGIC_ARITY = -1
 
@@ -185,6 +180,37 @@ module Inline
       # Can't do these converters because they conflict with the above:
       # ID2SYM(x), SYM2ID(x), F\IX2UINT(x)
     }
+
+    # copied from ZenTestMapping
+    METHOD_TEST_NAME_MAP = [
+      ['!',   /_bang$/],
+      ['%',   /_percent$/],
+      ['&',   /_and$/],
+      ['*',   /_times$/],
+      ['**',  /_times2$/],
+      ['+',   /_plus$/],
+      ['-',   /_minus$/],
+      ['/',   /_div$/],
+      ['<',   /_lt$/],
+      ['<=',  /_lte$/],
+      ['<=>', /_spaceship$/],
+      ['<<',  /_lt2$/],
+      ['==',  /_equals2$/],
+      ['===', /_equals3$/],
+      ['=~',  /_equalstilde$/],
+      ['>',   /_gt$/],
+      ['>=',  /_ge$/],
+      ['>>',  /_gt2$/],
+      ['+@',  /_unary_plus$/],
+      ['-@',  /_unary_minus$/],
+      ['[]',  /_index$/],
+      ['[]=', /_index_equals$/],
+      ['^',   /_carat$/],
+      ['|',   /_or$/],
+      ['~',   /_tilde$/],
+      ['=',   /_equals$/],
+      ['?',   /_eh$/]
+    ]
 
     def strip_comments(src)
       # strip c-comments
@@ -374,6 +400,14 @@ module Inline
         @module_name = "Inline_#{module_name}_#{md5}"
       end
       @module_name
+    end
+
+    def test_to_normal(name)
+      name = name.dup
+      METHOD_TEST_NAME_MAP.each do |normal, test|
+        name.sub!(test, normal)
+      end
+      name
     end
 
     def so_name
