@@ -1049,3 +1049,21 @@ class TestModule < InlineTestCase
     end
   end
 end
+
+class TestHeader < InlineTestCase
+
+  class MyTest; end
+
+  def test_headers
+    assert_block do
+      MyTest.instance_eval do
+        inline do |builder|
+          builder.include '"intern.h"'
+          builder.include '"node.h"'
+        end
+      end
+
+      true
+    end
+  end
+end
