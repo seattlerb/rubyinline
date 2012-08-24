@@ -572,6 +572,10 @@ VALUE #{method}_equals(VALUE value) {
                             nil
                           end
 
+          if RUBY_VERSION > '1.9'
+            RbConfig::CONFIG['CFLAGS'] += " -DRUBY_19"
+          end
+
           windoze = WINDOZE and RUBY_PLATFORM =~ /mswin/
           sane = ! windoze
           cmd = [ RbConfig::CONFIG['LDSHARED'],

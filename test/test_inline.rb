@@ -1067,3 +1067,32 @@ class TestHeader < InlineTestCase
     end
   end
 end
+
+class TestConditional < InlineTestCase
+
+  class MyTest; end
+
+  def test_ruby_19_macro
+    MyTest.instance_eval do
+      inline do |builder|
+        builder.c_raw <<-EOF
+          static VALUE number(int argc, VALUE *argv, VALUE self) {
+#ifdef RUBY_19
+            return INT2NUM(9);
+#else
+            return INT2NUM(8);
+#endif
+
+          }
+        EOF
+      end
+    end
+
+    if RUBY_VERSION > "1.9"
+      assert_equal MyTest.new.number, 9
+    else
+      assert_equal MyTest.new.number, 8
+    end
+
+  end
+end
