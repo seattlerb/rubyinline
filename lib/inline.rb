@@ -268,7 +268,7 @@ module Inline
         }.join
 
         # replace the function signature (hopefully) with new sig (prefix)
-        result.sub!(/[^;\/\"\>]+#{function_name}\s*\([^\{]+\{/, "\n" + prefix)
+        result.sub!(/^(?!#)[^;\/\"\>]+#{function_name}\s*\([^\{]+\{/, prefix)
         result.sub!(/\A\n/, '') # strip off the \n in front in case we added it
         unless return_type == "void" then
           raise SyntaxError, "Couldn't find return statement for #{function_name}" unless
@@ -281,7 +281,7 @@ module Inline
         end
       else
         prefix = "static #{return_type} #{function_name}("
-        result.sub!(/[^;\/\"\>]+#{function_name}\s*\(/, prefix)
+        result.sub!(/^(?!#)[^;\/\"\>]+#{function_name}\s*\(/, prefix)
         result.sub!(/\A\n/, '') # strip off the \n in front in case we added it
       end
 

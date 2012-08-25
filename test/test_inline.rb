@@ -40,6 +40,30 @@ class InlineTestCase < MiniTest::Unit::TestCase
   def test_stupid
     #shuts test unit up
   end
+
+  def util_generate(src, expected, expand_types=true)
+    result = @builder.generate src, expand_types
+    result = util_strip_lines result
+    result.gsub!(/\# line \d+/, '# line N')
+    expected = "# line N \"#{$0}\"\n" + expected
+    assert_equal(expected, result)
+  end
+
+  def util_generate_raw(src, expected)
+    util_generate(src, expected, false)
+  end
+
+  def util_strip_lines(src)
+    case src
+    when String then
+      src.gsub(/\# line \d+/, '# line N')
+    when Array then
+      src.map do |chunk|
+        util_strip_lines chunk
+      end
+    end
+  end
+
 end
 
 class TestDir < InlineTestCase
@@ -516,29 +540,6 @@ static VALUE method_name_equals(VALUE self, VALUE _value) {
 
     util_parse_signature(src, expected,
              "register int", "FI\X2INT", "INT2FI\X")
-  end
-
-  def util_generate(src, expected, expand_types=true)
-    result = @builder.generate src, expand_types
-    result = util_strip_lines result
-    result.gsub!(/\# line \d+/, '# line N')
-    expected = "# line N \"#{$0}\"\n" + expected
-    assert_equal(expected, result)
-  end
-
-  def util_generate_raw(src, expected)
-    util_generate(src, expected, false)
-  end
-
-  def util_strip_lines(src)
-    case src
-    when String then
-      src.gsub(/\# line \d+/, '# line N')
-    when Array then
-      src.map do |chunk|
-        util_strip_lines chunk
-      end
-    end
   end
 
   # Ruby Arity Rules, from the mouth of Matz:
@@ -1072,6 +1073,11 @@ class TestConditional < InlineTestCase
 
   class MyTest; end
 
+  def setup
+    super
+    @builder = Inline::C.new(self.class)
+  end
+
   def test_ruby_19_macro
     MyTest.instance_eval do
       inline do |builder|
@@ -1095,4 +1101,33 @@ class TestConditional < InlineTestCase
     end
 
   end
+
+  def test_before_function_definition_c_raw
+    src = <<EOF
+#if 0
+  static VALUE add(int argc, VALUE *argv, VALUE self) {
+    return Qnil;
+  }
+#else
+  static VALUE minus(int argc, VALUE *argv, VALUE self) {
+    return Qnil;
+  }
+#endif
+EOF
+
+    expected = <<EOF
+#if 0
+static VALUE add(int argc, VALUE *argv, VALUE self) {
+    return Qnil;
+  }
+#else
+  static VALUE minus(int argc, VALUE *argv, VALUE self) {
+    return Qnil;
+  }
+#endif
+EOF
+
+    util_generate_raw(src, expected)
+  end
+
 end
