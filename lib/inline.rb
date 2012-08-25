@@ -268,7 +268,7 @@ module Inline
         }.join
 
         # replace the function signature (hopefully) with new sig (prefix)
-        result.sub!(/[^;\/\"\>]+#{function_name}\s*\([^\{]+\{/, "\n" + prefix)
+        result.sub!(/^(?!#)[^;\/\"\>]+#{function_name}\s*\([^\{]+\{/, prefix)
         result.sub!(/\A\n/, '') # strip off the \n in front in case we added it
         unless return_type == "void" then
           raise SyntaxError, "Couldn't find return statement for #{function_name}" unless
@@ -281,7 +281,7 @@ module Inline
         end
       else
         prefix = "static #{return_type} #{function_name}("
-        result.sub!(/[^;\/\"\>]+#{function_name}\s*\(/, prefix)
+        result.sub!(/^(?!#)[^;\/\"\>]+#{function_name}\s*\(/, prefix)
         result.sub!(/\A\n/, '') # strip off the \n in front in case we added it
       end
 
@@ -559,6 +559,10 @@ VALUE #{method}_equals(VALUE value) {
             dir and File.exist? File.join(dir, "/ruby.h")
           } or abort "ERROR: Can't find header dir for ruby. Exiting..."
 
+          ruby_version_full = "ruby-#{RUBY_VERSION}-p#{RUBY_PATCHLEVEL}"
+          hdrdir2 = "#{RbConfig::CONFIG["rubyhdrdir"]}/#{ruby_version_full}"
+          hdrdir3 = "#{RbConfig::CONFIG["rubyhdrdir"]}/ruby"
+
           flags = @flags.join(' ')
           libs  = @libs.join(' ')
 
@@ -567,6 +571,10 @@ VALUE #{method}_equals(VALUE value) {
                           else
                             nil
                           end
+
+          if RUBY_VERSION > '1.9'
+            RbConfig::CONFIG['CFLAGS'] += " -DRUBY_19"
+          end
 
           windoze = WINDOZE and RUBY_PLATFORM =~ /mswin/
           sane = ! windoze
@@ -577,6 +585,8 @@ VALUE #{method}_equals(VALUE value) {
                   RbConfig::CONFIG['CFLAGS'],
                   (RbConfig::CONFIG['LDFLAGS']          if sane),
                   '-I', hdrdir,
+                  '-I', hdrdir2,
+                  '-I', hdrdir3,
                   config_hdrdir,
                   '-I', RbConfig::CONFIG['includedir'],
                   ("-L#{RbConfig::CONFIG['libdir']}"    if sane),
