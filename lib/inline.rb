@@ -644,7 +644,7 @@ VALUE #{method}_equals(VALUE value) {
         " -link /OUT:\"#{self.so_name}\" /LIBPATH:\"#{RbConfig::CONFIG['libdir']}\" /DEFAULTLIB:\"#{RbConfig::CONFIG['LIBRUBY']}\" /INCREMENTAL:no /EXPORT:Init_#{module_name}"
       when /mingw32/ then
         c = RbConfig::CONFIG
-        " -Wl,--enable-auto-import -L#{c['libdir']} -l#{c['RUBY_SO_NAME']}"
+        " -Wl,--enable-auto-import -L#{c['libdir']} -l#{c['RUBY_SO_NAME']} -o #{so_name.inspect}"
       when /i386-cygwin/ then
         ' -L/usr/local/lib -lruby.dll'
       else
