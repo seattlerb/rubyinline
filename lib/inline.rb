@@ -70,10 +70,8 @@ module Inline
   WINDOZE  = /mswin|mingw/ =~ RUBY_PLATFORM
   RUBINIUS = defined? RUBY_ENGINE
   DEV_NULL = (WINDOZE ? 'nul'      : '/dev/null')
-  GEM      = (WINDOZE ? 'gem.bat'  : 'gem')
-  RAKE     = if WINDOZE then
-               'rake.bat'
-             elsif RUBINIUS then
+  GEM      = 'gem'
+  RAKE     = if RUBINIUS then
                File.join(Gem.bindir, 'rake')
              else
                "#{Gem.ruby} -S rake"
