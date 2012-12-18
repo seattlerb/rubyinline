@@ -662,6 +662,13 @@ VALUE #{method}_equals(VALUE value) {
     end
 
     ##
+    # Registers a static id_name for the symbol :name.
+
+    def add_id name
+      self.add_static "id_#{name}", "rb_intern(\"#{name}\")"
+    end
+
+    ##
     # Adds linker flags to the link command line.  No preprocessing is
     # done, so you must have all your dashes and everything.
 
@@ -710,12 +717,12 @@ VALUE #{method}_equals(VALUE value) {
     end
 
     ##
-    # Maps a ruby constant to C (with the same name)
+    # Maps RubyConstants to cRubyConstants.
 
     def map_ruby_const(*names)
       names.each do |name|
-        self.prefix "static VALUE #{name};"
-        self.add_to_init "    #{name} = rb_const_get(c, rb_intern(#{name.to_s.inspect}));"
+        self.prefix "static VALUE c#{name};"
+        self.add_to_init "    c#{name} = rb_const_get(c, rb_intern(#{name.to_s.inspect}));"
       end
     end
 
