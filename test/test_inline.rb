@@ -1,6 +1,7 @@
 $TESTING = true
 
-$0 = __FILE__ if $0 =~ /-e|\(eval\)/
+$0 = __FILE__ if $0 =~ /-e|\(eval\)|^$/
+$0 = $0.sub(Dir.pwd, '.')
 
 require 'inline'
 require 'tempfile'
@@ -13,14 +14,8 @@ File.umask(0)
 
 require 'pathname'
 
-$expand_paths     = Pathname.new(__FILE__).absolute?
 $inline_path      = './lib/inline.rb'
 $test_inline_path = './test/test_inline.rb'
-
-if $expand_paths then
-  $inline_path      = File.expand_path $inline_path
-  $test_inline_path = File.expand_path $test_inline_path
-end
 
 class InlineTestCase < MiniTest::Unit::TestCase
   def setup
@@ -35,10 +30,6 @@ class InlineTestCase < MiniTest::Unit::TestCase
       FileUtils.rm_rf @rootdir
       ENV.delete 'INLINEDIR'
     end
-  end
-
-  def test_stupid
-    #shuts test unit up
   end
 end
 
@@ -521,7 +512,7 @@ static VALUE method_name_equals(VALUE self, VALUE _value) {
   def util_generate(src, expected, expand_types=true)
     result = @builder.generate src, expand_types
     result = util_strip_lines result
-    result.gsub!(/\# line \d+/, '# line N')
+
     expected = "# line N \"#{$0}\"\n" + expected
     assert_equal(expected, result)
   end
@@ -533,7 +524,7 @@ static VALUE method_name_equals(VALUE self, VALUE _value) {
   def util_strip_lines(src)
     case src
     when String then
-      src.gsub(/\# line \d+/, '# line N')
+      src.gsub(/\# line \d+/, '# line N').gsub(Dir.pwd, '.')
     when Array then
       src.map do |chunk|
         util_strip_lines chunk
@@ -807,21 +798,22 @@ extern \"C\" {
 
     expected = "# line N \"#{$0}\"\nstatic VALUE add(VALUE self, VALUE _a, VALUE _b) {\n  int a = FIX2INT(_a);\n  int b = FIX2INT(_b);\n return INT2FIX(a + b); }"
 
-    result.gsub!(/\# line \d+/, '# line N')
+    result = util_strip_lines result
 
     assert_equal expected, result
-    assert_equal [expected], @builder.src
+    assert_equal [expected], util_strip_lines(@builder.src)
   end
 
   def test_c_raw
     src = "static VALUE answer_raw(int argc, VALUE *argv, VALUE self) { return INT2NUM(42); }"
-    result = @builder.c_raw src.dup
 
-    result.gsub!(/\# line \d+/, '# line N')
+    result = @builder.c_raw src.dup
+    result = util_strip_lines result
+
     expected = "# line N \"#{$0}\"\n" + src
 
     assert_equal expected, result
-    assert_equal [expected], @builder.src
+    assert_equal [expected], util_strip_lines(@builder.src)
   end
 
   def test_map_c_const
@@ -874,6 +866,8 @@ extern \"C\" {
   end
 
   def test_build_good
+    skip "https://github.com/MagLev/maglev/issues/231" if maglev?
+
     code = util_simple_code(:DumbTest1, "long dumbpi() { return 314; }")
     util_test_build(code) do
       result = DumbTest1.new.dumbpi
@@ -983,6 +977,8 @@ EOR
 
 class TestModule < InlineTestCase
   def test_nested
+    skip "https://github.com/MagLev/maglev/issues/231" if maglev?
+
     Object.class_eval $test_module_code
     fb = Foo::Bar.new
     assert_equal(42, fb.forty_two_instance)
@@ -1003,12 +999,16 @@ class TestModule < InlineTestCase
   end
 
   def test_argument_check_good
+    skip "https://github.com/MagLev/maglev/issues/231" if maglev?
+
     util_arity_check
     fb = Foo::Bar.new
     assert_equal 13, fb.arity6(1, 2, 3, 4, 5, "blah")
   end
 
   def test_argument_check_fewer
+    skip "https://github.com/MagLev/maglev/issues/231" if maglev?
+
     util_arity_check
     fb = Foo::Bar.new
 
@@ -1018,6 +1018,8 @@ class TestModule < InlineTestCase
   end
 
   def test_argument_check_more
+    skip "https://github.com/MagLev/maglev/issues/231" if maglev?
+
     util_arity_check
     fb = Foo::Bar.new
     assert_raises ArgumentError do
@@ -1026,6 +1028,8 @@ class TestModule < InlineTestCase
   end
 
   def test_inline
+    skip "https://github.com/MagLev/maglev/issues/231" if maglev?
+
     self.class.inline(:C) do |builder|
       builder.c "int add(int a, int b) { return a + b; }"
     end

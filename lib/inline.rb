@@ -551,10 +551,10 @@ VALUE #{method}_equals(VALUE value) {
 
         if recompile then
 
-          hdrdir = %w(srcdir archdir rubyhdrdir).map { |name|
+          hdrdir = %w(srcdir includedir archdir rubyhdrdir).map { |name|
             RbConfig::CONFIG[name]
           }.find { |dir|
-            dir and File.exist? File.join(dir, "/ruby.h")
+            dir and File.exist? File.join(dir, "ruby.h")
           } or abort "ERROR: Can't find header dir for ruby. Exiting..."
 
           flags = @flags.join(' ')
