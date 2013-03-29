@@ -41,7 +41,7 @@ See hoe for more details.
 * Pretends to be secure.
 * Only requires standard ruby libraries, nothing extra to download.
 
-== SYNOPSYS:
+== SYNOPSIS:
 
   require "inline"
   class MyTest
@@ -57,7 +57,7 @@ See hoe for more details.
   t = MyTest.new()
   factorial_5 = t.factorial(5)
 
-== SYNOPSYS (C++):
+== SYNOPSIS (C++):
 
   require 'inline'
   class MyTest
