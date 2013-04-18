@@ -317,6 +317,10 @@ module Inline
 
       ext << @inc
       ext << nil
+      unless @pre.empty? then
+        ext << @pre.join("\n\n")
+        ext << nil
+      end
       ext << @src.join("\n\n")
       ext << nil
       ext << nil
@@ -368,6 +372,7 @@ module Inline
       unless defined? @module_name then
         module_name = @mod.name.gsub('::','__')
         md5 = Digest::MD5.new
+        @pre.each { |m| md5 << m.to_s }
         @sig.keys.sort_by { |x| x.to_s }.each { |m| md5 << m.to_s }
         @module_name = "Inline_#{module_name}_#{md5}"
       end
@@ -383,7 +388,7 @@ module Inline
 
     attr_reader :rb_file, :mod
     attr_writer :mod
-    attr_accessor :src, :sig, :flags, :libs, :init_extra
+    attr_accessor :src, :pre, :sig, :flags, :libs, :init_extra
 
     ##
     # Sets the name of the C struct for generating accessors.  Used with
@@ -404,6 +409,7 @@ module Inline
       @rb_file = File.expand_path real_caller
 
       @mod = mod
+      @pre = []
       @src = []
       @inc = []
       @sig = {}
@@ -763,7 +769,7 @@ VALUE #{method}_equals(VALUE value) {
     # Adds any amount of text/code to the source
 
     def prefix(code)
-      @src << code
+      @pre << code
     end
 
     ##

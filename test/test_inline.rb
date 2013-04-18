@@ -748,10 +748,14 @@ puts(s); return rb_str_new2(s)}"
 
     @builder.c "VALUE my_method() { return Qnil; }"
 
+    @builder.prefix "static int x;"
+
     windoze = "\n  __declspec(dllexport)" if Inline::WINDOZE
 
     expected = <<-EXT
 #include "ruby.h"
+
+static int x;
 
 # line N "#{$test_inline_path}"
 static VALUE allocate(VALUE self) {
@@ -765,7 +769,7 @@ static VALUE my_method(VALUE self) {
 #ifdef __cplusplus
 extern \"C\" {
 #endif#{windoze}
-  void Init_Inline_TestInline__TestC_eba5e5454322e22fe2310198ef14e43f() {
+  void Init_Inline_TestInline__TestC_3ab8c09639e499394bb1f0a0194a839f() {
     VALUE c = rb_cObject;
     c = rb_const_get(c, rb_intern("TestInline"));
     c = rb_const_get(c, rb_intern("TestC"));
