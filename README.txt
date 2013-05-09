@@ -2,7 +2,7 @@
 
 rdoc :: http://docs.seattlerb.org/RubyInline/
 home :: http://www.zenspider.com/ZSS/Products/RubyInline/
-repo :: https://github.com/seattlerb/rubyinline
+code :: https://github.com/seattlerb/rubyinline
 
 == DESCRIPTION:
 
