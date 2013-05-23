@@ -17,7 +17,7 @@ require 'pathname'
 $inline_path      = './lib/inline.rb'
 $test_inline_path = './test/test_inline.rb'
 
-class InlineTestCase < MiniTest::Unit::TestCase
+class InlineTestCase < Minitest::Test
   def setup
     super
     @rootdir = File.join(Dir.tmpdir, "test_inline.#{$$}")
