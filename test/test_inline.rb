@@ -933,6 +933,7 @@ extern \"C\" {
 
   def test_load
     # totally tested by test_build
+    assert true
   end
 
 end # class TestC
