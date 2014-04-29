@@ -1,3 +1,11 @@
+=== 3.12.3 / 2014-04-29
+
+* 3 bug fixes:
+
+  * Fixed code/home urls in readme/gem.
+  * Fixed linker error on clang+freebsd10+rbenv.
+  * Removed old hack for osx 10.5
+
 === 3.12.2 / 2013-04-18
 
 * 2 minor enhancements:
