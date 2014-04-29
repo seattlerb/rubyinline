@@ -595,12 +595,9 @@ VALUE #{method}_equals(VALUE value) {
           # odd compilation error on clang + freebsd 10. Ruby built w/ rbenv.
           cmd = cmd.gsub(/-Wl,-soname,\$@/, "-Wl,-soname,#{File.basename so_name}")
 
-         # strip off some makefile macros for mingw 1.9
-         cmd = cmd.gsub(/\$\(.*\)/, '') if RUBY_PLATFORM =~ /mingw/
+          # strip off some makefile macros for mingw 1.9
+          cmd = cmd.gsub(/\$\(.*\)/, '') if RUBY_PLATFORM =~ /mingw/
 
-          # TODO: remove after osx 10.5.2
-          cmd += ' -flat_namespace -undefined suppress' if
-            RUBY_PLATFORM =~ /darwin9\.[01]/
           cmd += " 2> #{DEV_NULL}" if $TESTING and not $DEBUG
 
           warn "Building #{so_name} with '#{cmd}'" if $DEBUG
