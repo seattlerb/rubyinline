@@ -592,6 +592,9 @@ VALUE #{method}_equals(VALUE value) {
                   (RbConfig::CONFIG['CCDLFLAGS']        if windoze),
                 ].compact.join(' ')
 
+          # odd compilation error on clang + freebsd 10. Ruby built w/ rbenv.
+          cmd = cmd.gsub(/-Wl,-soname,\$@/, "-Wl,-soname,#{File.basename so_name}")
+
          # strip off some makefile macros for mingw 1.9
          cmd = cmd.gsub(/\$\(.*\)/, '') if RUBY_PLATFORM =~ /mingw/
 
