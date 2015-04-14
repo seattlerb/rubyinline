@@ -566,7 +566,9 @@ VALUE #{method}_equals(VALUE value) {
           flags = @flags.join(' ')
           libs  = @libs.join(' ')
 
-          config_hdrdir = if RUBY_VERSION > '1.9' then
+          config_hdrdir = if RbConfig::CONFIG['rubyarchhdrdir'] then
+                            "-I #{RbConfig::CONFIG['rubyarchhdrdir']}"
+                          elsif RUBY_VERSION > '1.9' then
                             "-I #{File.join hdrdir, RbConfig::CONFIG['arch']}"
                           else
                             nil
