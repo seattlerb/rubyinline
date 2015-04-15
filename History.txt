@@ -1,3 +1,9 @@
+=== 3.12.4 / 2015-04-14
+
+* 1 bug fix:
+
+  * Fixed arch header directoy with Ruby >= 2.0. (aurelj)
+
 === 3.12.3 / 2014-04-29
 
 * 3 bug fixes:
