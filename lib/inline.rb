@@ -100,6 +100,9 @@ module Inline
   #
   # Perform a check in that other to see if the environment is defined
   # and if so, use it. only try this on Windows.
+  #
+  # Note, depending on how you're using this (eg, a rails app in
+  # production), you probably want to use absolute paths.
 
   def self.rootdir
     env = ENV['INLINEDIR'] || ENV['HOME']
