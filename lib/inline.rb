@@ -585,6 +585,7 @@ VALUE #{method}_equals(VALUE value) {
                   (RbConfig::CONFIG['CCDLFLAGS']        if sane),
                   RbConfig::CONFIG['CFLAGS'],
                   (RbConfig::CONFIG['LDFLAGS']          if sane),
+                  (RbConfig::CONFIG['LIBRUBYARG']       if sane),
                   '-I', hdrdir,
                   config_hdrdir,
                   '-I', RbConfig::CONFIG['includedir'],
