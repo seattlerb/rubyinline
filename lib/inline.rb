@@ -883,6 +883,8 @@ class File
     end
 
     return renamed
+  rescue SystemCallError
+    return false
   end
 end # class File
 
