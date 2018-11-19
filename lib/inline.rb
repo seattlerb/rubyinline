@@ -873,9 +873,13 @@ class File
 
     # move previous version to the side if it exists
     renamed = false
-    if test ?f, path then
-      renamed = true
-      File.rename path, path + ".old"
+    if File.file? path then
+      begin
+        File.rename path, path + ".old"
+        renamed = true
+      rescue SystemCallError
+        # do nothing
+      end
     end
 
     File.open(path, "w") do |io|
