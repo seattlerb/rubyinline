@@ -870,8 +870,6 @@ extern \"C\" {
   end
 
   def test_build_good
-    skip "https://github.com/MagLev/maglev/issues/231" if maglev?
-
     code = util_simple_code(:DumbTest1, "long dumbpi() { return 314; }")
     util_test_build(code) do
       result = DumbTest1.new.dumbpi
@@ -982,8 +980,6 @@ EOR
 
 class TestModule < InlineTestCase
   def test_nested
-    skip "https://github.com/MagLev/maglev/issues/231" if maglev?
-
     Object.class_eval $test_module_code
     fb = Foo::Bar.new
     assert_equal(42, fb.forty_two_instance)
@@ -1004,16 +1000,12 @@ class TestModule < InlineTestCase
   end
 
   def test_argument_check_good
-    skip "https://github.com/MagLev/maglev/issues/231" if maglev?
-
     util_arity_check
     fb = Foo::Bar.new
     assert_equal 13, fb.arity6(1, 2, 3, 4, 5, "blah")
   end
 
   def test_argument_check_fewer
-    skip "https://github.com/MagLev/maglev/issues/231" if maglev?
-
     util_arity_check
     fb = Foo::Bar.new
 
@@ -1023,8 +1015,6 @@ class TestModule < InlineTestCase
   end
 
   def test_argument_check_more
-    skip "https://github.com/MagLev/maglev/issues/231" if maglev?
-
     util_arity_check
     fb = Foo::Bar.new
     assert_raises ArgumentError do
@@ -1033,8 +1023,6 @@ class TestModule < InlineTestCase
   end
 
   def test_inline
-    skip "https://github.com/MagLev/maglev/issues/231" if maglev?
-
     self.class.inline(:C) do |builder|
       builder.c "int add(int a, int b) { return a + b; }"
     end
