@@ -65,7 +65,7 @@ class CompilationError < RuntimeError; end
 # the current namespace.
 
 module Inline
-  VERSION = "3.12.5"
+  VERSION = "3.12.6"
 
   WINDOZE  = /mswin|mingw/ =~ RUBY_PLATFORM
   DEV_NULL = (WINDOZE ? 'nul'      : '/dev/null')
