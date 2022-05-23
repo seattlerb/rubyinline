@@ -68,14 +68,9 @@ module Inline
   VERSION = "3.12.5"
 
   WINDOZE  = /mswin|mingw/ =~ RUBY_PLATFORM
-  RUBINIUS = defined? RUBY_ENGINE
   DEV_NULL = (WINDOZE ? 'nul'      : '/dev/null')
   GEM      = 'gem'
-  RAKE     = if RUBINIUS then
-               File.join(Gem.bindir, 'rake')
-             else
-               "#{Gem.ruby} -S rake"
-             end
+  RAKE     = "#{Gem.ruby} -S rake"
 
   warn "RubyInline v #{VERSION}" if $DEBUG
 
