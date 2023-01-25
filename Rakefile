@@ -23,11 +23,12 @@ task :test => :clean
 
 desc "run all examples"
 task :examples do
-  %w(example.rb example2.rb
+  %w(example.rb
+     example2.rb
      tutorial/example1.rb
      tutorial/example2.rb).each do |e|
     rm_rf '~/.ruby_inline'
-    ruby "-Ilib -w #{e}"
+    ruby "-Ilib -I#{Hoe.include_dirs.first} -w #{e}"
   end
 end
 

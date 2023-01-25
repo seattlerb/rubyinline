@@ -55,31 +55,31 @@ end
 puts "# of iterations = #{max}, n = #{n}"
 Benchmark::bm(20) do |x|
   x.report("null_time") do
-    for i in 0..max do
+    max.times do
       # do nothing
     end
   end
 
   x.report("c") do
-    for i in 0..max do
+    max.times do
       validate(t.factorial_c(n), m)
     end
   end
 
   x.report("c-raw") do
-    for i in 0..max do
+    max.times do
       validate(t.factorial_c_raw(n), m)
     end
   end
 
   x.report("c-alias") do
-    for i in 0..max do
+    max.times do
       validate(t.factorial_alias(n), m)
     end
   end
 
   x.report("pure ruby") do
-    for i in 0..max do
+    max.times do
       validate(t.factorial(n), m)
     end
   end

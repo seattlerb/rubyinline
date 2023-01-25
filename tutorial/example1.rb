@@ -3,7 +3,7 @@
 # We started out with some code that averaged a ton of numbers in a
 # bunch of arrays. Once we finally lost our patience with the average
 # running time of the code, we decided to profile and optimize it
-# using RubyInline. 
+# using RubyInline.
 
 class Array
 
@@ -20,7 +20,7 @@ max_size = (ARGV.shift || 100_000).to_i
 a = (1..max_size).to_a
 
 1.upto(max_loop) do
-  avg = a.average
+  a.average
   $stderr.print "."
 end
 $stderr.puts ""
@@ -34,7 +34,7 @@ $stderr.puts ""
 
 #   & time ruby ./example1.rb 5 100000
 #   .....
-#  
+#
 #   real 0m4.580s
 #   user 0m3.310s
 #   sys  0m0.090s

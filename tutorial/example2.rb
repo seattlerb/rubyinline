@@ -27,7 +27,7 @@ max_size = (ARGV.shift || 100_000).to_i
 a = (1..max_size).to_a
 
 1.upto(max_loop) do
-  avg = a.average
+  a.average
   $stderr.print "."
 end
 $stderr.puts ""

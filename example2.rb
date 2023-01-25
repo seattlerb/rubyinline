@@ -10,11 +10,13 @@ require 'inline'
 class MyTest
 
   inline do |builder|
+    builder.include_ruby_last
 
     builder.add_compile_flags %q(-x c++)
     builder.add_link_flags %q(-lstdc++)
 
     builder.include "<iostream>"
+    builder.include '"ruby/version.h"'
 
     builder.c "
 static
