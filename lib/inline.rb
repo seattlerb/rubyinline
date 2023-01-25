@@ -554,6 +554,9 @@ VALUE #{method}_equals(VALUE value) {
         end
 
         if recompile then
+          unless RbConfig::CONFIG["ENABLE_SHARED"] == "yes" then
+            raise "this ruby isn't configured for dynamic linking"
+          end
 
           hdrdir = %w(srcdir includedir archdir rubyhdrdir).map { |name|
             RbConfig::CONFIG[name]
@@ -562,6 +565,9 @@ VALUE #{method}_equals(VALUE value) {
           } or abort "ERROR: Can't find header dir for ruby. Exiting..."
 
           flags = @flags.join(' ')
+
+          @libs << RbConfig::CONFIG['LIBRUBYARG_SHARED']
+
           libs  = @libs.join(' ')
 
           config_hdrdir = if RbConfig::CONFIG['rubyarchhdrdir'] then
