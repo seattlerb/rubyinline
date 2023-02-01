@@ -1,3 +1,13 @@
+=== 3.13.0 / 2023-01-31
+
+* 1 minor enhancement:
+
+  * Error out if current ruby isn't configured for ENABLE_SHARED.
+
+* 1 bug fix:
+
+  * Clean up examples. C++ warns about ANYARGS deprecation. Gonna have to sit with it for now.
+
 === 3.12.6 / 2022-05-23
 
 * 1 bug fix:
