@@ -326,7 +326,7 @@ module Inline
       ext << "extern \"C\" {"
       ext << "#endif"
       ext << "  __declspec(dllexport)" if WINDOZE
-      ext << "  void Init_#{module_name}() {"
+      ext << "  void Init_#{module_name}(void) {"
       ext << "    VALUE c = rb_cObject;"
 
       # TODO: use rb_class2path
