@@ -16,6 +16,8 @@ Hoe.spec "RubyInline" do
   spec_extras[:requirements] =
     "A POSIX environment and a compiler for your language."
 
+  license "MIT"
+
   dependency "ZenTest", "~> 4.3" # for ZenTest mapping
 end
 
