@@ -35,7 +35,7 @@ task :examples do
 end
 
 desc "run simple benchmarks"
-task :bench do
+task :bench => [:clean, :isolate] do
   verbose(false) do
     ruby "-Ilib ./example.rb"
     ruby "-Ilib ./example.rb 1000000 12" # 12 is the bignum cutoff for factorial
