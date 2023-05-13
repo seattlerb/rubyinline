@@ -74,12 +74,12 @@ module Inline
 
   warn "RubyInline v #{VERSION}" if $DEBUG
 
-  def self.register cls
+  def self.register cls # for hoe/inline
     registered_inline_classes << cls
     registered_inline_classes.uniq!
   end
 
-  def self.registered_inline_classes
+  def self.registered_inline_classes # for hoe/inline
     @@registered_inline_classes ||= []
   end
 
@@ -326,7 +326,7 @@ module Inline
       ext << "extern \"C\" {"
       ext << "#endif"
       ext << "  __declspec(dllexport)" if WINDOZE
-      ext << "  void Init_#{module_name}() {"
+      ext << "  void Init_#{module_name}(void) {"
       ext << "    VALUE c = rb_cObject;"
 
       # TODO: use rb_class2path
@@ -449,7 +449,7 @@ module Inline
         @struct_name
 
       c <<-C
-VALUE #{method}() {
+VALUE #{method}(void) {
   #{@struct_name} *pointer;
 
   Data_Get_Struct(self, #{@struct_name}, pointer);
@@ -535,14 +535,11 @@ VALUE #{method}_equals(VALUE value) {
         end
 
         src_name = "#{Inline.directory}/#{module_name}.c"
-        old_src_name = "#{src_name}.old"
-        should_compare = File.write_with_backup(src_name) do |io|
-          io.puts generate_ext
-        end
+        old_src_name = File.write_with_backup src_name, generate_ext
 
         # recompile only if the files are different
         recompile = true
-        if so_exists and should_compare and
+        if so_exists and old_src_name and
             FileUtils.compare_file(old_src_name, src_name) then
           recompile = false
 
@@ -834,22 +831,9 @@ class Module
   def inline(lang = :C, options={})
     Inline.register self
 
-    case options
-    when TrueClass, FalseClass then
-      warn "WAR\NING: 2nd argument to inline is now a hash, changing to {:testing=>#{options}}" unless options
-      options = { :testing => options  }
-    when Hash
-      options[:testing] ||= false
-    else
-      raise ArgumentError, "BLAH"
-    end
+    require "inline/#{lang}" unless Inline.const_defined? lang
 
-    builder_class = begin
-                      Inline.const_get(lang)
-                    rescue NameError
-                      require "inline/#{lang}"
-                      Inline.const_get(lang)
-                    end
+    builder_class = Inline.const_get lang
 
     builder = builder_class.new self
 
@@ -869,25 +853,24 @@ class File
   ##
   # Equivalent to +File::open+ with an associated block, but moves
   # any existing file with the same name to the side first.
+  # Returns renamed path or false if none.
 
-  def self.write_with_backup(path) # returns true if file already existed
-
-    # move previous version to the side if it exists
+  def self.write_with_backup(path, content)
     renamed = false
+
     if File.file? path then
+      renamed = "#{path}.old"
+
       begin
-        File.rename path, path + ".old"
-        renamed = true
-      rescue SystemCallError
+        File.rename path, renamed
+      rescue SystemCallError # in case of race condition
         # do nothing
       end
     end
 
-    File.open(path, "w") do |io|
-      yield(io)
-    end
+    File.write path, content
 
-    return renamed
+    renamed
   end
 end # class File
 
@@ -901,7 +884,7 @@ class Dir
 
   def self.assert_secure(path)
     mode = File.stat(path).mode
-    unless ((mode % 01000) & 0022) == 0 then
+    unless mode % 01000 & 0022 == 0 then
       if $TESTING then
         raise SecurityError, "Directory #{path} is insecure"
       else

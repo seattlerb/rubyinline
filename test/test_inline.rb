@@ -769,7 +769,7 @@ static VALUE my_method(VALUE self) {
 #ifdef __cplusplus
 extern \"C\" {
 #endif#{windoze}
-  void Init_Inline_TestInline__TestC_3ab8c09639e499394bb1f0a0194a839f() {
+  void Init_Inline_TestInline__TestC_3ab8c09639e499394bb1f0a0194a839f(void) {
     VALUE c = rb_cObject;
     c = rb_const_get(c, rb_intern("TestInline"));
     c = rb_const_get(c, rb_intern("TestC"));
