@@ -1,3 +1,15 @@
+=== 3.14.0 / 2023-06-28
+
+* 3 minor enhancements:
+
+  * Changed File.write_with_backup to write the content and return renamed path.
+  * Dropped #inline ancient options processing code. 2005, yo.
+  * Preemptively require language extension if not defined yet.
+
+* 1 bug fix:
+
+  * Declare Init_* to be (void) to prevent some compilers from complaining.
+
 === 3.13.0 / 2023-01-31
 
 * 1 minor enhancement:
