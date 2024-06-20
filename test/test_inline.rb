@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 $TESTING = true
 
 $0 = __FILE__ if $0 =~ /-e|\(eval\)|^$/

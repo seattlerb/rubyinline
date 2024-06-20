@@ -1,4 +1,4 @@
-#!/usr/local/bin/ruby -w
+# frozen_string_literal: true
 
 ##
 # Ruby Inline is a framework for writing ruby extensions in foreign
@@ -338,7 +338,7 @@ module Inline
       ext << nil
 
       @sig.keys.sort.each do |name|
-        method = ''
+        method = []
         arity, singleton, method_name = @sig[name]
         if singleton then
           if method_name == 'allocate' then
@@ -351,7 +351,7 @@ module Inline
           method << "    rb_define_method(c, \"#{method_name}\", "
         end
         method << "(VALUE(*)(ANYARGS))#{name}, #{arity});"
-        ext << method
+        ext << method.join
       end
 
       ext << @init_extra.join("\n") unless @init_extra.empty?
