@@ -1,3 +1,9 @@
+=== 3.14.1 / 2024-06-23
+
+* 1 bug fix:
+
+  * Fix errors created when string literals are frozen.
+
 === 3.14.0 / 2023-06-28
 
 * 3 minor enhancements:
