@@ -63,7 +63,8 @@ See hoe for more details.
   class MyTest
     inline(:C) do |builder|
       builder.include '<iostream>'
-      builder.add_compile_flags '-x c++', '-lstdc++'
+      builder.add_compile_flags '-x c++'
+      builder.add_link_flags '-lstdc++'
       builder.c '
         void hello(int i) {
           while (i-- > 0) {
