@@ -394,11 +394,20 @@ module Inline
 
     attr_accessor :struct_name
 
+    # 3.3: "test/test_inline.rb:88:in `new'"
+    # 3.4: "lib/inline.rb:846:in 'Class#new'"
+
+    STACK_RE = if RUBY_VERSION > "3.4" then
+                 /in .+?[.#](inline|setup)/
+               else
+                 /in .(inline|setup)/
+               end
+
     def initialize(mod)
       raise ArgumentError, "Class/Module arg is required" unless Module === mod
       # new (but not on some 1.8s) -> inline -> real_caller|eval
       stack = caller
-      meth = stack.shift until meth =~ /in .(inline|test_|setup)/ or stack.empty?
+      meth = stack.shift until meth =~ STACK_RE or stack.empty?
       raise "Couldn't discover caller" if stack.empty?
       real_caller = stack.first
       real_caller = stack[3] if real_caller =~ /\(eval\)/
