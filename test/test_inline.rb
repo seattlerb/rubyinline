@@ -83,9 +83,11 @@ end
 class TestInline
 class TestC < InlineTestCase
 
+  attr_accessor :builder
+
   def setup
     super
-    @builder = Inline::C.new(self.class)
+    self.builder = Inline::C.new self.class
   end
 
 
@@ -98,17 +100,14 @@ class TestC < InlineTestCase
   end
 
   def test_initialize
-    x = Inline::C.new(self.class)
-    assert_equal TestInline::TestC, x.mod
-    assert_equal [], x.src
-    assert_equal({}, x.sig)
-    assert_equal [], x.flags
-    assert_equal [], x.libs
+    assert_equal TestInline::TestC, builder.mod
+    assert_equal [], builder.src
+    assert_equal({}, builder.sig)
+    assert_equal [], builder.flags
+    assert_equal [], builder.libs
   end
 
   def test_accessor
-    builder = Inline::C.new self.class
-
     builder.struct_name = 'MyStruct'
     builder.accessor 'method_name', 'int'
 
@@ -146,8 +145,6 @@ static VALUE method_name_equals(VALUE self, VALUE _value) {
   end
 
   def test_accessor_member_name
-    builder = Inline::C.new self.class
-
     builder.struct_name = 'MyStruct'
     builder.accessor 'method_name', 'int', 'member_name'
 
@@ -185,8 +182,6 @@ static VALUE method_name_equals(VALUE self, VALUE _value) {
   end
 
   def test_accessor_no_struct_name
-    builder = Inline::C.new self.class
-
     e = assert_raises RuntimeError do
       builder.accessor 'method_name', 'int'
     end
@@ -195,8 +190,6 @@ static VALUE method_name_equals(VALUE self, VALUE _value) {
   end
 
   def test_add_type_converter
-    builder = Inline::C.new self.class
-
     builder.add_type_converter 'my_type', 'ruby_type2my_type',
                                'my_type2ruby_type'
 
@@ -205,8 +198,6 @@ static VALUE method_name_equals(VALUE self, VALUE _value) {
   end
 
   def test_alias_type_converter
-    builder = Inline::C.new self.class
-
     builder.alias_type_converter 'long long', 'int64_t'
 
     assert_equal 'LL2NUM', builder.c2ruby('int64_t')
@@ -214,8 +205,6 @@ static VALUE method_name_equals(VALUE self, VALUE _value) {
   end
 
   def test_reader
-    builder = Inline::C.new self.class
-
     builder.struct_name = 'MyStruct'
     builder.reader 'method_name', 'int'
 
@@ -238,8 +227,6 @@ static VALUE method_name(VALUE self) {
   end
 
   def test_reader_member_name
-    builder = Inline::C.new self.class
-
     builder.struct_name = 'MyStruct'
     builder.reader 'method_name', 'int', 'member_name'
 
@@ -262,8 +249,6 @@ static VALUE method_name(VALUE self) {
   end
 
   def test_reader_no_struct_name
-    builder = Inline::C.new self.class
-
     e = assert_raises RuntimeError do
       builder.reader 'method_name', 'int'
     end
@@ -272,8 +257,6 @@ static VALUE method_name(VALUE self) {
   end
 
   def test_remove_type_converter
-    builder = Inline::C.new self.class
-
     builder.remove_type_converter 'long'
 
     assert_raises ArgumentError do
@@ -282,8 +265,6 @@ static VALUE method_name(VALUE self) {
   end
 
   def test_writer
-    builder = Inline::C.new self.class
-
     builder.struct_name = 'MyStruct'
     builder.writer 'method_name', 'int'
 
@@ -309,8 +290,6 @@ static VALUE method_name_equals(VALUE self, VALUE _value) {
   end
 
   def test_writer_member_name
-    builder = Inline::C.new self.class
-
     builder.struct_name = 'MyStruct'
     builder.writer 'method_name', 'int', 'member_name'
 
@@ -336,8 +315,6 @@ static VALUE method_name_equals(VALUE self, VALUE _value) {
   end
 
   def test_writer_no_struct_name
-    builder = Inline::C.new self.class
-
     e = assert_raises RuntimeError do
       builder.writer 'method_name', 'int'
     end
@@ -346,55 +323,53 @@ static VALUE method_name_equals(VALUE self, VALUE _value) {
   end
 
   def test_ruby2c
-    x = Inline::C.new(self.class)
-    assert_equal 'NUM2CHR',        x.ruby2c("char")
-    assert_equal 'StringValuePtr', x.ruby2c("char *")
+    assert_equal 'NUM2CHR',        builder.ruby2c("char")
+    assert_equal 'StringValuePtr', builder.ruby2c("char *")
 
-    assert_equal "FI\X2INT",       x.ruby2c("int")
-    assert_equal 'NUM2UINT',       x.ruby2c("unsigned")
-    assert_equal 'NUM2UINT',       x.ruby2c("unsigned int")
+    assert_equal "FI\X2INT",       builder.ruby2c("int")
+    assert_equal 'NUM2UINT',       builder.ruby2c("unsigned")
+    assert_equal 'NUM2UINT',       builder.ruby2c("unsigned int")
 
-    assert_equal 'NUM2LONG',       x.ruby2c("long")
-    assert_equal 'NUM2ULONG',      x.ruby2c("unsigned long")
+    assert_equal 'NUM2LONG',       builder.ruby2c("long")
+    assert_equal 'NUM2ULONG',      builder.ruby2c("unsigned long")
 
-    assert_equal 'NUM2LL',         x.ruby2c("long long")
-    assert_equal 'NUM2ULL',        x.ruby2c("unsigned long long")
+    assert_equal 'NUM2LL',         builder.ruby2c("long long")
+    assert_equal 'NUM2ULL',        builder.ruby2c("unsigned long long")
 
-    assert_equal 'NUM2DBL',        x.ruby2c("double")
+    assert_equal 'NUM2DBL',        builder.ruby2c("double")
 
-    assert_equal 'NUM2OFFT',       x.ruby2c("off_t")
+    assert_equal 'NUM2OFFT',       builder.ruby2c("off_t")
 
-    assert_equal '',               x.ruby2c("VALUE")
+    assert_equal '',               builder.ruby2c("VALUE")
 
     assert_raises ArgumentError do
-      x.ruby2c('blah')
+      builder.ruby2c('blah')
     end
   end
 
   def test_c2ruby
-    x = Inline::C.new(self.class)
-    assert_equal 'CHR2FIX',      x.c2ruby("char")
+    assert_equal 'CHR2FIX',      builder.c2ruby("char")
 
-    assert_equal 'rb_str_new2',  x.c2ruby("char *")
+    assert_equal 'rb_str_new2',  builder.c2ruby("char *")
 
-    assert_equal 'INT2FIX',      x.c2ruby("int")
-    assert_equal 'UINT2NUM',     x.c2ruby("unsigned int")
-    assert_equal 'UINT2NUM',     x.c2ruby("unsigned")
+    assert_equal 'INT2FIX',      builder.c2ruby("int")
+    assert_equal 'UINT2NUM',     builder.c2ruby("unsigned int")
+    assert_equal 'UINT2NUM',     builder.c2ruby("unsigned")
 
-    assert_equal 'LONG2NUM',     x.c2ruby("long")
-    assert_equal 'ULONG2NUM',    x.c2ruby("unsigned long")
+    assert_equal 'LONG2NUM',     builder.c2ruby("long")
+    assert_equal 'ULONG2NUM',    builder.c2ruby("unsigned long")
 
-    assert_equal 'LL2NUM',       x.c2ruby("long long")
-    assert_equal 'ULL2NUM',      x.c2ruby("unsigned long long")
+    assert_equal 'LL2NUM',       builder.c2ruby("long long")
+    assert_equal 'ULL2NUM',      builder.c2ruby("unsigned long long")
 
-    assert_equal 'rb_float_new', x.c2ruby("double")
+    assert_equal 'rb_float_new', builder.c2ruby("double")
 
-    assert_equal 'OFFT2NUM',     x.c2ruby("off_t")
+    assert_equal 'OFFT2NUM',     builder.c2ruby("off_t")
 
-    assert_equal '',             x.c2ruby("VALUE")
+    assert_equal '',             builder.c2ruby("VALUE")
 
     assert_raises ArgumentError do
-      x.c2ruby('blah')
+      builder.c2ruby('blah')
     end
   end
 
