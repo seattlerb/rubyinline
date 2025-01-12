@@ -584,7 +584,7 @@ VALUE #{method}_equals(VALUE value) {
                             nil
                           end
 
-          windoze = WINDOZE and RUBY_PLATFORM =~ /mswin/
+          windoze = (WINDOZE and RUBY_PLATFORM =~ /mswin/)
           sane = ! windoze
           cmd = [ RbConfig::CONFIG['LDSHARED'],
                   flags,
