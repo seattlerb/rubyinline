@@ -410,7 +410,7 @@ module Inline
       meth = stack.shift until meth =~ STACK_RE or stack.empty?
       raise "Couldn't discover caller" if stack.empty?
       real_caller = stack.first
-      real_caller = stack[3] if real_caller =~ /\(eval\)/
+      real_caller = stack[3] if real_caller =~ /^\(eval/ # "(eval):N:in ..." -> (3.4) "(eval at :N):N:in ..."
       real_caller =~ /(.*):(\d+)/
       real_caller = $1
       @rb_file = File.expand_path real_caller
