@@ -1,7 +1,7 @@
 = Ruby Inline
 
-rdoc :: http://docs.seattlerb.org/RubyInline/
-home :: http://www.zenspider.com/ZSS/Products/RubyInline/
+rdoc :: https://docs.seattlerb.org/RubyInline/
+home :: https://zenspider.com/projects/rubyinline.html
 code :: https://github.com/seattlerb/rubyinline
 
 == DESCRIPTION:
@@ -94,19 +94,18 @@ See hoe for more details.
 
 == PROFILING STRATEGY:
 
-0) Always keep a log of your progress and changes.
-1) Run code with 'time' and large dataset.
-2) Run code with '-rprofile' and smaller dataset, large enough to get good #s.
-3) Examine profile output and translate 1 bottleneck to C.
-4) Run new code with 'time' and large dataset. Repeat 2-3 if unsatisfied.
-5) Run final code with 'time' and compare to the first run.
+0. Always keep a log of your progress and changes.
+1. Run code with 'time' and large dataset.
+2. Run code with '-rprofile' and smaller dataset, large enough to get good #s.
+3. Examine profile output and translate 1 bottleneck to C.
+4. Run new code with 'time' and large dataset. Repeat 2-3 if unsatisfied.
+5. Run final code with 'time' and compare to the first run.
 
 == REQUIREMENTS:
 
-* Ruby - 1.8.2 has been used on FreeBSD 4.6+ and MacOSX.
+* Ruby >= 3.2
 * POSIX compliant system (ie pretty much any UNIX, or Cygwin on MS platforms).
 * A C/C++ compiler (the same one that compiled your ruby interpreter).
-* test::unit for running tests ( http://testunit.talbott.ws/ ).
 
 == INSTALL:
 

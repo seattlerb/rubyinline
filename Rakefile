@@ -18,6 +18,8 @@ Hoe.spec "RubyInline" do
 
   license "MIT"
 
+  require_ruby_version ">= 3.2"
+
   dependency "ZenTest", "~> 4.3" # for ZenTest mapping
 end
 
