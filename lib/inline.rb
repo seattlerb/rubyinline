@@ -683,7 +683,7 @@ VALUE #{method}_equals(VALUE value) {
     # Registers a static id_name for the symbol :name.
 
     def add_id name
-      self.add_static "id_#{name}", "rb_intern(\"#{name}\")"
+      self.add_static "id_#{munge name}", "rb_intern(\"#{name}\")", "ID"
     end
 
     ##
