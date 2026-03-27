@@ -25,6 +25,10 @@ end
 
 task :test => :clean
 
+task :include do
+  puts Hoe.include_dirs.first
+end
+
 desc "run all examples"
 task :examples do
   %w(example.rb
