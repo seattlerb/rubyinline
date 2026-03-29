@@ -1,3 +1,12 @@
+=== 3.14.4 / 2026-03-28
+
+* 4 bug fixes:
+
+  * Bumped ruby to 3.2+.
+  * Fix #add_id to munge id names (eg * -> times) and fix type to ID.
+  * Fixed urls, formatting, and requirements in readme.
+  * Moved History and readme from txt to rdoc files.
+
 === 3.14.3 / 2026-02-02
 
 * 1 bug fix:
